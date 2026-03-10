@@ -529,7 +529,7 @@ function resetApp() {
   _isLiveSource = true;
   showLoading();
   document.getElementById('loadingState').querySelector('.load-sub').textContent = 'Loading live data from Google Sheets…';
-  loadFromUrl(DEFAULT_SHEET_URL + '&_t=' + Date.now(), 'Google Sheet');
+  loadFromUrl(DEFAULT_SHEET_URL, 'Google Sheet');
 }
 
 // ═══════════════════════════════════════════════
@@ -554,7 +554,7 @@ function manualRefresh() {
 
 function doLiveRefresh() {
   Object.values(charts).forEach(c => c.destroy()); charts = {};
-  loadFromUrl(DEFAULT_SHEET_URL + '&_t=' + Date.now(), 'Google Sheet');
+  loadFromUrl(DEFAULT_SHEET_URL, 'Google Sheet');
 }
 
 function scheduleHourlyRefresh() {
@@ -608,7 +608,7 @@ function updateLastUpdatedLabel() {
   _isLiveSource = true;
   showLoading();
   document.getElementById('loadingState').querySelector('.load-sub').textContent = 'Loading live data from Google Sheets…';
-  loadFromUrl(DEFAULT_SHEET_URL + '&_t=' + Date.now(), 'Google Sheet');
+  loadFromUrl(DEFAULT_SHEET_URL, 'Google Sheet');
 })();
 
 

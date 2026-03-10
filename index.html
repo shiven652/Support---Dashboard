@@ -275,9 +275,10 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
   <div class="fetch-panel">
     <div style="font-size:13px;font-weight:700;color:var(--navy2);margin-bottom:12px;">⚡ Auto-Connect a Data Source <span style="font-size:10px;font-weight:500;color:var(--slate);margin-left:6px;">— no file upload needed, auto-loads on open</span></div>
     <div class="fetch-tabs">
-      <button class="fetch-tab active" onclick="switchTab('sheets')">📊 Google Sheets (Publish)</button>
-      <button class="fetch-tab" onclick="switchTab('sheetsapi')">🔑 Sheets API Key</button>
-      <button class="fetch-tab" onclick="switchTab('api')">🔗 API / CSV URL</button>
+      <button class="fetch-tab active" onclick="switchTab('sheets')">📊 Publish URL</button>
+      <button class="fetch-tab" onclick="switchTab('sheetsapi')">🔑 Sheets API</button>
+      <button class="fetch-tab" onclick="switchTab('appsscript')" style="background:linear-gradient(135deg,#1a6b3a,#2d9e57);color:#fff;">⚡ Apps Script <span style="font-size:9px;background:rgba(255,255,255,0.25);padding:1px 5px;border-radius:8px;margin-left:3px;">RECOMMENDED</span></button>
+      <button class="fetch-tab" onclick="switchTab('api')">🔗 API / CSV</button>
     </div>
 
     <!-- GOOGLE SHEETS TAB -->
@@ -335,6 +336,45 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
       </div>
     </div>
 
+
+    <!-- APPS SCRIPT TAB -->
+    <div class="fetch-tab-body" id="tab-appsscript">
+      <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#14532d;">
+        ✅ <b>Zero CORS issues</b> — runs on Google's own servers. Works from any browser, local file, or hosted page. <b>Recommended method.</b>
+      </div>
+      <div class="fetch-label">Apps Script Web App URL</div>
+      <div class="fetch-sub">Deploy a tiny Google Apps Script from your sheet — it acts as a secure bridge and returns your data directly.</div>
+      <div class="fetch-row">
+        <input class="fetch-input" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" />
+        <button class="btn-fetch" onclick="fetchFromAppsScript()">▶ Load & Analyse</button>
+      </div>
+      <div class="fetch-howto">
+        <b>One-time setup (2 minutes):</b><br>
+        1. Open your Google Sheet → click <b>Extensions → Apps Script</b><br>
+        2. Delete any existing code and paste this:<br>
+        <div style="background:#1e293b;color:#7dd3fc;border-radius:6px;padding:10px 12px;margin:8px 0;font-family:'DM Mono',monospace;font-size:11px;line-height:1.7;white-space:pre-wrap;">function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var rows = data.slice(1).map(function(row) {
+    var obj = {};
+    headers.forEach(function(h, i) { obj[h] = row[i]; });
+    return obj;
+  });
+  return ContentService
+    .createTextOutput(JSON.stringify(rows))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+        3. Click <b>Deploy → New deployment</b> → gear icon → <b>Web app</b><br>
+        4. Set <b>"Execute as"</b> → Me, <b>"Who has access"</b> → <b>Anyone</b><br>
+        5. Click <b>Deploy</b> → copy the <b>/exec</b> URL and paste above ✅<br>
+        <b>⚡ Every time you refresh, it pulls the latest data live from your sheet!</b>
+      </div>
+      <div id="savedAppsScript" class="fetch-saved" style="display:none">
+        <span>Saved:</span><span class="fetch-saved-url" id="savedAppsScriptUrl"></span>
+        <button class="btn-clear-url" onclick="clearSaved('appsscript')">✕ Clear</button>
+      </div>
+    </div>
 
     <div class="fetch-tab-body" id="tab-api">
       <div class="fetch-label">API or direct CSV URL</div>
@@ -611,11 +651,12 @@ function resetApp() {
 // ═══════════════════════════════════════════════
 const STORAGE_KEY_SHEETS = 'cxo_sheets_url';
 const STORAGE_KEY_SHEETSAPI = 'cxo_sheetsapi_creds';
+const STORAGE_KEY_APPSSCRIPT = 'cxo_appsscript_url';
 const STORAGE_KEY_API    = 'cxo_api_url';
-let _savedSource = null; // { type, url } — for refresh
+let _savedSource = null;
 
 function switchTab(tab) {
-  const tabs = ['sheets','sheetsapi','api'];
+  const tabs = ['sheets','sheetsapi','appsscript','api'];
   document.querySelectorAll('.fetch-tab').forEach((el,i) => el.classList.toggle('active', tabs[i]===tab));
   tabs.forEach(t => document.getElementById('tab-'+t).classList.toggle('active', t===tab));
 }
@@ -695,6 +736,18 @@ async function _doSheetsApiFetch(apiKey, sheetId, tabName) {
   if (dash) dash.style.display = 'inline-block';
 }
 
+// ─── Apps Script Web App (Zero CORS) ─────────────────────────────
+function fetchFromAppsScript() {
+  const url = document.getElementById('appsScriptUrl').value.trim();
+  if (!url) { alert('Please paste your Apps Script Web App URL first.'); return; }
+  if (!url.includes('script.google.com')) { alert('This should be a script.google.com/macros/s/.../exec URL.'); return; }
+  try { localStorage.setItem(STORAGE_KEY_APPSSCRIPT, url); } catch(e){}
+  _savedSource = { type: 'appsscript', url };
+  document.getElementById('savedAppsScript').style.display = 'flex';
+  document.getElementById('savedAppsScriptUrl').textContent = url;
+  loadFromUrl(url, 'Apps Script');
+}
+
 function fetchFromUrl(type) {
   const input = document.getElementById(type==='sheets' ? 'sheetsUrl' : 'apiUrl');
   let url = input.value.trim();
@@ -725,19 +778,41 @@ function loadFromUrl(url, sourceName) {
   showLoading();
   document.getElementById('loadingState').querySelector('.load-sub').textContent = `Fetching from ${sourceName}...`;
 
-  // Use a CORS proxy for Google Sheets if needed
   fetch(url)
     .then(r => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.text();
+      const ct = r.headers.get('content-type') || '';
+      // Clone response so we can try JSON first
+      return r.text().then(text => ({ text, ct }));
     })
-    .then(csvText => {
-      Papa.parse(csvText, {
+    .then(({ text, ct }) => {
+      // Auto-detect: try JSON first, fall back to CSV
+      const looksLikeJson = text.trimStart().startsWith('[') || text.trimStart().startsWith('{');
+      if (looksLikeJson) {
+        try {
+          let rows = JSON.parse(text);
+          // If it's an object with a data/values/rows key, unwrap it
+          if (!Array.isArray(rows)) {
+            rows = rows.data || rows.rows || rows.values || rows.records || Object.values(rows)[0];
+          }
+          if (!Array.isArray(rows) || !rows.length) throw new Error('No data rows found in JSON response.');
+          // Normalise: convert all values to strings for consistency
+          rows = rows.map(r => { const o={}; Object.entries(r).forEach(([k,v])=>o[k]=v==null?'':String(v)); return o; });
+          buildDashboard(rows, sourceName);
+          document.getElementById('btnRefresh').style.display = 'flex';
+          const dash = document.getElementById('btnRefreshDash');
+          if (dash) dash.style.display = 'inline-block';
+          return;
+        } catch(jsonErr) {
+          // not valid JSON — fall through to CSV parse
+        }
+      }
+      // Parse as CSV
+      Papa.parse(text, {
         header: true, skipEmptyLines: true,
         complete: result => {
           if (!result.data.length) throw new Error('No data rows found in the CSV.');
           buildDashboard(result.data, sourceName);
-          // Show refresh buttons
           document.getElementById('btnRefresh').style.display = 'flex';
           const dash = document.getElementById('btnRefreshDash');
           if (dash) dash.style.display = 'inline-block';
@@ -752,12 +827,14 @@ function loadFromUrl(url, sourceName) {
 
 function refreshFromSaved() {
   if (!_savedSource) {
-    const sheetsUrl = (() => { try { return localStorage.getItem(STORAGE_KEY_SHEETS); } catch(e){ return null; } })();
-    const apiUrl    = (() => { try { return localStorage.getItem(STORAGE_KEY_API);    } catch(e){ return null; } })();
+    const sheetsUrl   = (() => { try { return localStorage.getItem(STORAGE_KEY_SHEETS); } catch(e){ return null; } })();
+    const apiUrl      = (() => { try { return localStorage.getItem(STORAGE_KEY_API);    } catch(e){ return null; } })();
+    const appsUrl     = (() => { try { return localStorage.getItem(STORAGE_KEY_APPSSCRIPT); } catch(e){ return null; } })();
     const sheetsCreds = (() => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY_SHEETSAPI)); } catch(e){ return null; } })();
-    if (sheetsCreds) _savedSource = { type:'sheetsapi', creds: sheetsCreds };
-    else if (sheetsUrl) _savedSource = { type:'sheets', url: sheetsUrl };
-    else if (apiUrl) _savedSource = { type:'api', url: apiUrl };
+    if (appsUrl)      _savedSource = { type:'appsscript', url: appsUrl };
+    else if (sheetsCreds) _savedSource = { type:'sheetsapi', creds: sheetsCreds };
+    else if (sheetsUrl)   _savedSource = { type:'sheets', url: sheetsUrl };
+    else if (apiUrl)      _savedSource = { type:'api', url: apiUrl };
   }
   if (_savedSource) {
     Object.values(charts).forEach(c => c.destroy()); charts = {};
@@ -766,6 +843,8 @@ function refreshFromSaved() {
       showLoading();
       document.getElementById('loadingState').querySelector('.load-sub').textContent = 'Refreshing from Google Sheets API...';
       _doSheetsApiFetch(apiKey, sheetId, tabName).catch(err => showError(`Sheets API error: ${err.message}`));
+    } else if (_savedSource.type === 'appsscript') {
+      loadFromUrl(_savedSource.url, 'Apps Script');
     } else {
       loadFromUrl(_savedSource.url, _savedSource.type==='sheets' ? 'Google Sheet' : 'API');
     }
@@ -791,6 +870,13 @@ function clearSaved(type) {
     document.getElementById('sheetsApiTab').value = '';
     return;
   }
+  if (type === 'appsscript') {
+    try { localStorage.removeItem(STORAGE_KEY_APPSSCRIPT); } catch(e){}
+    if (_savedSource && _savedSource.type==='appsscript') _savedSource = null;
+    document.getElementById('savedAppsScript').style.display = 'none';
+    document.getElementById('appsScriptUrl').value = '';
+    return;
+  }
   try { localStorage.removeItem(type==='sheets' ? STORAGE_KEY_SHEETS : STORAGE_KEY_API); } catch(e){}
   if (_savedSource && _savedSource.type===type) _savedSource = null;
   const id = type==='sheets' ? 'savedSheets' : 'savedApi';
@@ -803,9 +889,17 @@ function clearSaved(type) {
 (function initAutoFetch() {
   const sheetsUrl   = (() => { try { return localStorage.getItem(STORAGE_KEY_SHEETS); } catch(e){ return null; } })();
   const apiUrl      = (() => { try { return localStorage.getItem(STORAGE_KEY_API);    } catch(e){ return null; } })();
+  const appsUrl     = (() => { try { return localStorage.getItem(STORAGE_KEY_APPSSCRIPT); } catch(e){ return null; } })();
   const sheetsCreds = (() => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY_SHEETSAPI)); } catch(e){ return null; } })();
 
-  if (sheetsCreds && sheetsCreds.apiKey && sheetsCreds.sheetId) {
+  if (appsUrl) {
+    switchTab('appsscript');
+    document.getElementById('appsScriptUrl').value = appsUrl;
+    document.getElementById('savedAppsScript').style.display = 'flex';
+    document.getElementById('savedAppsScriptUrl').textContent = appsUrl;
+    _savedSource = { type:'appsscript', url: appsUrl };
+    loadFromUrl(appsUrl, 'Apps Script');
+  } else if (sheetsCreds && sheetsCreds.apiKey && sheetsCreds.sheetId) {
     switchTab('sheetsapi');
     document.getElementById('sheetsApiKey').value = sheetsCreds.apiKey;
     document.getElementById('sheetsApiId').value  = sheetsCreds.sheetId;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CXO Ticket Analytics — Upload Tool</title>
+<title>Support Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -238,7 +238,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 <!-- HEADER -->
 <div class="hdr">
   <div class="hdr-left">
-    <h1>🎯 CXO Ticket Analytics</h1>
+    <h1>🎯 Support Dashboard</h1>
     <p>Live data from Google Sheets — auto-refreshes every hour</p>
   </div>
   <div class="hdr-right">
@@ -248,38 +248,15 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
     <button class="btn-ppt" id="btnPpt" onclick="generatePPT()" style="display:none">
       📊 Download PPT
     </button>
-    <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
-      ⬆ Upload CSV/Excel
-    </button>
-    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" onchange="handleFile(event)">
   </div>
 </div>
 
 <!-- ERROR -->
 <div id="errorMsg"></div>
 
-<!-- UPLOAD ZONE -->
-<div id="uploadZone">
-  <!-- Auto-loading banner -->
-  <div id="autoLoadBanner" style="width:100%;max-width:640px;margin:0 auto 16px;background:linear-gradient(135deg,#eef9f7,#f5fffe);border:1px solid #b2e8e2;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:12px;">
-    <span style="font-size:22px;">🔄</span>
-    <div>
-      <div style="font-size:13px;font-weight:700;color:var(--navy2);">Auto-loading live data from Google Sheets…</div>
-      <div style="font-size:11px;color:var(--slate);margin-top:2px;">Dashboard will appear automatically. Data refreshes every hour.</div>
-    </div>
-  </div>
-
-  <div class="drop-area" id="dropArea" style="max-width:640px;margin:0 auto;" onclick="document.getElementById('fileInput').click()">
-    <span class="drop-icon">📂</span>
-    <div class="drop-title">Or upload a local CSV / Excel file</div>
-    <div class="drop-sub">Override the live data with a one-time file upload.<br>Works with any support ticket export.</div>
-    <div class="drop-formats">
-      <span class="fmt-tag">.CSV</span>
-      <span class="fmt-tag">.XLSX</span>
-      <span class="fmt-tag">.XLS</span>
-    </div>
-    <button class="btn-browse" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">Browse File</button>
-  </div>
+<!-- UPLOAD ZONE (hidden, kept for reset flow) -->
+<div id="uploadZone" style="display:none">
+  <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" onchange="handleFile(event)" style="display:none">
 </div>
 
 <!-- LOADING -->
@@ -307,7 +284,6 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
     <div style="display:flex;gap:8px;align-items:center;">
       <div style="text-align:right;font-size:10px;color:var(--muted);" id="lastUpdatedLabel"></div>
       <button class="btn-refresh" id="btnRefreshDash" onclick="manualRefresh()" style="display:none">🔄 Refresh Now</button>
-      <button class="btn-upload" onclick="document.getElementById('fileInput').click()" style="font-size:12px;padding:6px 14px;">⬆ Upload CSV/Excel</button>
       <button class="btn-reset" onclick="resetApp()">✕ Reset</button>
     </div>
   </div>
@@ -465,9 +441,11 @@ Chart.defaults.font.family = "'DM Sans', sans-serif";
 // FILE HANDLING
 // ═══════════════════════════════════════════════
 const dropArea = document.getElementById('dropArea');
-['dragenter','dragover'].forEach(e => dropArea.addEventListener(e, ev => { ev.preventDefault(); dropArea.classList.add('dragover'); }));
-['dragleave','drop'].forEach(e => dropArea.addEventListener(e, ev => { ev.preventDefault(); dropArea.classList.remove('dragover'); }));
-dropArea.addEventListener('drop', ev => { const f = ev.dataTransfer.files[0]; if (f) processFile(f); });
+if (dropArea) {
+  ['dragenter','dragover'].forEach(e => dropArea.addEventListener(e, ev => { ev.preventDefault(); dropArea.classList.add('dragover'); }));
+  ['dragleave','drop'].forEach(e => dropArea.addEventListener(e, ev => { ev.preventDefault(); dropArea.classList.remove('dragover'); }));
+  dropArea.addEventListener('drop', ev => { const f = ev.dataTransfer.files[0]; if (f) processFile(f); });
+}
 
 function handleFile(e) { const f = e.target.files[0]; if (f) processFile(f); }
 
@@ -760,6 +738,12 @@ function buildDashboard(rows, filename) {
       const frtW = rows.filter(r=>(r[C.frtSla]||'').toLowerCase().includes('within')).length;
       const frtT = rows.filter(r=>(r[C.frtSla]||'').trim() !== '').length;
       kpis.push({ num: pct(frtW,frtT), lbl:'FRT Within SLA', sub: fmt(frtW)+' / '+fmt(frtT), col: frtW/frtT>.7?'c-green':'c-amber' });
+    }
+    // ART SLA
+    if (C.artSla) {
+      const artW = rows.filter(r=>(r[C.artSla]||'').toLowerCase().includes('within')).length;
+      const artT = rows.filter(r=>(r[C.artSla]||'').trim() !== '').length;
+      kpis.push({ num: pct(artW,artT), lbl:'ART Within SLA', sub: fmt(artW)+' / '+fmt(artT), col: artW/artT>.7?'c-green':'c-amber' });
     }
     document.getElementById('kpiGrid').innerHTML = kpis.map(k=>`
       <div class="kpi"><div class="kpi-num ${k.col}">${k.num}</div>

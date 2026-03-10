@@ -596,7 +596,7 @@ function loadFromUrl(url, sourceName) {
           rows = rows.map(r => { const o={}; Object.entries(r).forEach(([k,v])=>o[k]=v==null?'':String(v)); return o; });
           buildDashboard(rows, sourceName);
           if (_isLiveSource) { updateLastUpdatedLabel(); scheduleHourlyRefresh(); }
-          document.getElementById('btnRefresh').style.display = 'flex';
+          (function(){var _e=document.getElementById('btnRefresh');if(_e)_e.style.display='flex';})();
           const dash = document.getElementById('btnRefreshDash');
           if (dash) dash.style.display = 'inline-block';
           return;
@@ -608,7 +608,7 @@ function loadFromUrl(url, sourceName) {
           if (!result.data.length) { showError('No data rows found in the CSV.'); return; }
           buildDashboard(result.data, sourceName);
           if (_isLiveSource) { updateLastUpdatedLabel(); scheduleHourlyRefresh(); }
-          document.getElementById('btnRefresh').style.display = 'flex';
+          (function(){var _e=document.getElementById('btnRefresh');if(_e)_e.style.display='flex';})();
           const dash = document.getElementById('btnRefreshDash');
           if (dash) dash.style.display = 'inline-block';
         },

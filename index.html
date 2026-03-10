@@ -244,10 +244,6 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
   <div class="hdr-right">
     <span class="pill" id="rowCount" style="display:none"></span>
     <span class="pill" id="lastUpdatedPill" style="display:none"></span>
-    <button class="btn-refresh" id="btnRefresh" onclick="manualRefresh()" style="display:none">🔄 Refresh Now</button>
-    <button class="btn-ppt" id="btnPpt" onclick="generatePPT()" style="display:none">
-      📊 Download PPT
-    </button>
   </div>
 </div>
 
@@ -498,8 +494,6 @@ function resetApp() {
   document.getElementById('errorMsg').style.display = 'none';
   document.getElementById('rowCount').style.display = 'none';
   document.getElementById('fileInput').value = '';
-  document.getElementById('btnPpt').style.display = 'none';
-  document.getElementById('btnRefresh').style.display = 'none';
   document.getElementById('pptBar').style.display = 'none';
   Object.values(charts).forEach(c => c.destroy());
   charts = {};
@@ -1189,7 +1183,6 @@ function buildDashboard(rows, filename) {
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    document.getElementById('btnPpt').style.display = 'flex';
     document.getElementById('pptBar').style.display = 'flex';
     window.scrollTo({top:0, behavior:'smooth'});
 

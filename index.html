@@ -293,6 +293,38 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
     <button class="btn-ppt" onclick="generatePPT()" id="btnPpt2">📊 Download PPT</button>
   </div>
 
+  <!-- FILTER BAR -->
+  <div id="filterBar" style="display:none;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 20px;margin-bottom:14px;align-items:center;flex-wrap:wrap;gap:14px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <label style="font-size:12px;font-weight:600;color:var(--navy2);">Customer:</label>
+      <select id="filterCustomer" onchange="applyFilters()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;">
+        <option value="">All</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <label style="font-size:12px;font-weight:600;color:var(--navy2);">Team / Queue:</label>
+      <select id="filterQueue" onchange="applyFilters()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;">
+        <option value="">All</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <label style="font-size:12px;font-weight:600;color:var(--navy2);">Month:</label>
+      <select id="filterMonth" onchange="applyFilters()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;">
+        <option value="">All</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <label style="font-size:12px;font-weight:600;color:var(--navy2);">From:</label>
+      <input type="date" id="filterDateFrom" onchange="applyFilters()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <label style="font-size:12px;font-weight:600;color:var(--navy2);">To:</label>
+      <input type="date" id="filterDateTo" onchange="applyFilters()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;">
+    </div>
+    <button onclick="resetFilters()" style="background:var(--navy);color:#fff;border:none;padding:7px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Reset Filters</button>
+    <span id="filterCount" style="font-size:11px;color:var(--teal);font-weight:600;display:none;"></span>
+  </div>
+
   <!-- KPIs -->
   <div class="kpi-grid" id="kpiGrid"></div>
 
@@ -430,6 +462,9 @@ const COLORS = {
 };
 const PALETTE = [COLORS.navy, COLORS.teal, COLORS.amber, COLORS.red, COLORS.blue, COLORS.purple, COLORS.green, COLORS.orange, COLORS.pink, COLORS.slate];
 let charts = {};
+let _allRows = [];      // full unfiltered dataset
+let _sourceName = '';   // for re-renders
+let _colMap = {};       // detected column map
 
 Chart.defaults.font.family = "'DM Sans', sans-serif";
 
@@ -671,6 +706,79 @@ function barLabelsPlugin() {
 }
 
 // ═══════════════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════════════
+function populateFilters(rows, C) {
+  function fillSelect(id, values) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All</option>';
+    [...new Set(values)].filter(Boolean).sort().forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v;
+      sel.appendChild(o);
+    });
+    if (current) sel.value = current;
+  }
+  if (C.customer) fillSelect('filterCustomer', rows.map(r => (r[C.customer]||'').trim()));
+  if (C.queue)    fillSelect('filterQueue',    rows.map(r => (r[C.queue]||'').trim()));
+  if (C.month)    fillSelect('filterMonth',    rows.map(r => (r[C.month]||'').trim()));
+}
+
+function applyFilters() {
+  const customer  = document.getElementById('filterCustomer')?.value || '';
+  const queue     = document.getElementById('filterQueue')?.value || '';
+  const month     = document.getElementById('filterMonth')?.value || '';
+  const dateFrom  = document.getElementById('filterDateFrom')?.value || '';
+  const dateTo    = document.getElementById('filterDateTo')?.value || '';
+  const C = _colMap;
+
+  let filtered = _allRows;
+  if (customer) filtered = filtered.filter(r => (r[C.customer]||'').trim() === customer);
+  if (queue)    filtered = filtered.filter(r => (r[C.queue]||'').trim() === queue);
+  if (month)    filtered = filtered.filter(r => (r[C.month]||'').trim() === month);
+  if (dateFrom || dateTo) {
+    const from = dateFrom ? new Date(dateFrom) : null;
+    const to   = dateTo   ? new Date(dateTo)   : null;
+    if (to) to.setHours(23,59,59,999);
+    filtered = filtered.filter(r => {
+      const dateCol = C.date || C.month;
+      if (!dateCol) return true;
+      const d = new Date(r[dateCol]);
+      if (isNaN(d)) return true;
+      if (from && d < from) return false;
+      if (to   && d > to)   return false;
+      return true;
+    });
+  }
+
+  // Show filter count
+  const isFiltered = customer || queue || month || dateFrom || dateTo;
+  const fc = document.getElementById('filterCount');
+  if (fc) {
+    fc.style.display = isFiltered ? 'inline' : 'none';
+    fc.textContent = isFiltered ? `${filtered.length.toLocaleString()} of ${_allRows.length.toLocaleString()} rows` : '';
+  }
+
+  Object.values(charts).forEach(c => c.destroy()); charts = {};
+  buildDashboard(filtered, '__filtered__');
+}
+
+function resetFilters() {
+  ['filterCustomer','filterQueue','filterMonth'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  ['filterDateFrom','filterDateTo'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const fc = document.getElementById('filterCount');
+  if (fc) fc.style.display = 'none';
+  Object.values(charts).forEach(c => c.destroy()); charts = {};
+  buildDashboard(_allRows, _sourceName);
+}
+
+// ═══════════════════════════════════════════════
 // MAIN BUILD FUNCTION
 // ═══════════════════════════════════════════════
 function buildDashboard(rows, filename) {
@@ -700,7 +808,17 @@ function buildDashboard(rows, filename) {
       severity:   detect(headers, ['severity']),
       tech:       detect(headers, ['tech involved','tech_involved','technical']),
       tam:        detect(headers, ['tam account','tam']),
+      date:       detect(headers, ['created at','create date','date','created date','creation date']),
     };
+
+    // Store globally for filter re-use
+    _colMap = C;
+    // Only store full dataset on first load (not on filter re-render)
+    if (filename !== '__filtered__') {
+      _allRows = rows;
+      _sourceName = filename;
+      populateFilters(rows, C);
+    }
 
     // Determine resolved/pending
     const resolved = rows.filter(r => {
@@ -1187,6 +1305,7 @@ function buildDashboard(rows, filename) {
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('pptBar').style.display = 'flex';
+    document.getElementById('filterBar').style.display = 'flex';
     window.scrollTo({top:0, behavior:'smooth'});
 
   } catch(err) {

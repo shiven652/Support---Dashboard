@@ -476,13 +476,15 @@ function processFile(file) {
 }
 
 function showLoading() {
-  document.getElementById('uploadZone').style.display = 'none';
+  const uz = document.getElementById('uploadZone');
+  if (uz) uz.style.display = 'none';
   document.getElementById('loadingState').style.display = 'block';
   document.getElementById('dashboard').style.display = 'none';
 }
 function showError(msg) {
   document.getElementById('loadingState').style.display = 'none';
-  document.getElementById('uploadZone').style.display = 'flex';
+  const uz = document.getElementById('uploadZone');
+  if (uz) uz.style.display = 'none';
   const el = document.getElementById('errorMsg');
   el.textContent = '⚠ ' + msg;
   el.style.display = 'block';
@@ -490,7 +492,8 @@ function showError(msg) {
 function resetApp() {
   clearAutoRefreshTimers();
   document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('uploadZone').style.display = 'flex';
+  const uz = document.getElementById('uploadZone');
+  if (uz) uz.style.display = 'none';
   document.getElementById('errorMsg').style.display = 'none';
   document.getElementById('rowCount').style.display = 'none';
   document.getElementById('fileInput').value = '';

@@ -294,7 +294,24 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
   </div>
 
   <!-- FILTER BAR -->
-  <div id="filterBar" style="display:none;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 20px;margin-bottom:14px;align-items:center;flex-wrap:wrap;gap:14px;">
+  <div id="filterBar" style="display:none;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 20px;margin-bottom:14px;flex-direction:column;gap:10px;">
+    <!-- Mode switch row -->
+    <div style="display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+      <span style="font-size:11px;font-weight:700;color:var(--navy2);text-transform:uppercase;letter-spacing:0.5px;">Filter Mode:</span>
+      <div style="display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;">
+        <button id="modeInclude" onclick="setFilterMode('include')"
+          style="padding:5px 16px;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif;border:none;cursor:pointer;background:var(--teal);color:#fff;letter-spacing:0.3px;transition:all 0.18s;">
+          ✓ Include
+        </button>
+        <button id="modeExclude" onclick="setFilterMode('exclude')"
+          style="padding:5px 16px;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif;border:none;cursor:pointer;background:#f8fafc;color:var(--slate);letter-spacing:0.3px;transition:all 0.18s;">
+          ✕ Exclude
+        </button>
+      </div>
+      <span id="filterModeLabel" style="display:none;font-size:10.5px;font-weight:600;color:#7f1d1d;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:3px 10px;"></span>
+    </div>
+    <!-- Filters row -->
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:14px;">
     <div style="display:flex;align-items:center;gap:8px;">
       <label style="font-size:12px;font-weight:600;color:var(--navy2);">Customer:</label>
       <select id="filterCustomer" onchange="applyFilters()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;">
@@ -330,6 +347,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
     </div>
     <button onclick="resetFilters()" style="background:var(--navy);color:#fff;border:none;padding:7px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Reset Filters</button>
     <span id="filterCount" style="font-size:11px;color:var(--teal);font-weight:600;display:none;"></span>
+    </div><!-- end filters row -->
   </div>
 
   <!-- KPIs -->
@@ -731,6 +749,27 @@ function populateFilters(rows, C) {
   }
 }
 
+// ── Filter mode: include / exclude ──
+let _filterMode = 'include';
+
+function setFilterMode(mode) {
+  _filterMode = mode;
+  const btnInc = document.getElementById('modeInclude');
+  const btnExc = document.getElementById('modeExclude');
+  const lbl    = document.getElementById('filterModeLabel');
+  if (mode === 'include') {
+    btnInc.style.background = 'var(--teal)';   btnInc.style.color = '#fff';
+    btnExc.style.background = '#f8fafc';        btnExc.style.color = 'var(--slate)';
+    lbl.style.display = 'none';
+  } else {
+    btnExc.style.background = 'var(--red)';    btnExc.style.color = '#fff';
+    btnInc.style.background = '#f8fafc';        btnInc.style.color = 'var(--slate)';
+    lbl.style.display = 'inline';
+    lbl.textContent = '⚠ Exclude mode — selected values will be removed from results';
+  }
+  applyFilters();
+}
+
 function applyFilters() {
   const customer  = document.getElementById('filterCustomer')?.value || '';
   const queue     = document.getElementById('filterQueue')?.value || '';
@@ -741,12 +780,12 @@ function applyFilters() {
   const dateTo    = document.getElementById('filterDateTo')?.value || '';
   const C = _colMap;
 
+  const exclude = _filterMode === 'exclude';
   let filtered = _allRows;
-  if (customer)  filtered = filtered.filter(r => (r[C.customer]||'').trim() === customer);
-  if (queue)     filtered = filtered.filter(r => (r[C.queue]||'').trim() === queue);
-  if (month)     filtered = filtered.filter(r => (r[C.month]||'').trim() === month);
-  // ✅ CHANGE 3: Apply Sub Status filter
-  if (subStatus && C.subStatus) filtered = filtered.filter(r => (r[C.subStatus]||'').trim() === subStatus);
+  if (customer)  filtered = filtered.filter(r => exclude ? (r[C.customer]||'').trim() !== customer  : (r[C.customer]||'').trim() === customer);
+  if (queue)     filtered = filtered.filter(r => exclude ? (r[C.queue]||'').trim()    !== queue     : (r[C.queue]||'').trim()    === queue);
+  if (month)     filtered = filtered.filter(r => exclude ? (r[C.month]||'').trim()   !== month     : (r[C.month]||'').trim()    === month);
+  if (subStatus && C.subStatus) filtered = filtered.filter(r => exclude ? (r[C.subStatus]||'').trim() !== subStatus : (r[C.subStatus]||'').trim() === subStatus);
   if (dateFrom || dateTo) {
     const from = dateFrom ? new Date(dateFrom) : null;
     const to   = dateTo   ? new Date(dateTo)   : null;
@@ -775,6 +814,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
+  setFilterMode('include');
   // ✅ CHANGE 3: Include filterSubStatus in reset
   ['filterCustomer','filterQueue','filterMonth','filterSubStatus'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';

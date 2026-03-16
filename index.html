@@ -313,6 +313,13 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
         <option value="">All</option>
       </select>
     </div>
+    <!-- ✅ CHANGE 3: New Sub Status filter -->
+    <div id="filterSubStatusWrap" style="display:flex;align-items:center;gap:8px;">
+      <label style="font-size:12px;font-weight:600;color:var(--navy2);">Sub Status:</label>
+      <select id="filterSubStatus" onchange="applyFilters()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;">
+        <option value="">All</option>
+      </select>
+    </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <label style="font-size:12px;font-weight:600;color:var(--navy2);">From:</label>
       <input type="date" id="filterDateFrom" onchange="applyFilters()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;">
@@ -483,7 +490,6 @@ function handleFile(e) { const f = e.target.files[0]; if (f) processFile(f); }
 function processFile(file) {
   _isLiveSource = false;
   clearAutoRefreshTimers();
-  // Hide auto-refresh pill since this is a manual file
   const pill = document.getElementById('autoRefreshPill');
   if (pill) pill.style.display = 'none';
   showLoading();
@@ -535,7 +541,6 @@ function resetApp() {
   document.getElementById('pptBar').style.display = 'none';
   Object.values(charts).forEach(c => c.destroy());
   charts = {};
-  // Restart live data fetch
   _isLiveSource = true;
   showLoading();
   document.getElementById('loadingState').querySelector('.load-sub').textContent = 'Loading live data from Google Sheets…';
@@ -543,18 +548,15 @@ function resetApp() {
 }
 
 // ═══════════════════════════════════════════════
-// AUTO-FETCH: TABS, URL FETCH, STORAGE
-// ═══════════════════════════════════════════════
-// ═══════════════════════════════════════════════
 // DEFAULT DATA SOURCE + HOURLY AUTO-REFRESH
 // ═══════════════════════════════════════════════
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRxqS2ipBayAmOScFcnlsc1q1TCYn8lL1JXFCOAHsHlwzIAwRKL1wcaGFH2_163EHKQEqePejXUXbN9/pub?gid=49278904&single=true&output=csv';
-const HOURLY_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+const HOURLY_INTERVAL_MS = 60 * 60 * 1000;
 
 let _autoRefreshTimer = null;
 let _countdownTimer = null;
 let _nextRefreshAt = null;
-let _isLiveSource = false; // true when using the default sheet (not a manual file upload)
+let _isLiveSource = false;
 
 function manualRefresh() {
   if (!_isLiveSource) return;
@@ -570,14 +572,10 @@ function doLiveRefresh() {
 function scheduleHourlyRefresh() {
   clearAutoRefreshTimers();
   _nextRefreshAt = Date.now() + HOURLY_INTERVAL_MS;
-
-  // Show countdown pill
   const pill = document.getElementById('autoRefreshPill');
   const dashRefresh = document.getElementById('btnRefreshDash');
   if (pill) pill.style.display = 'block';
   if (dashRefresh) dashRefresh.style.display = 'inline-block';
-
-  // Countdown ticker (updates every second)
   _countdownTimer = setInterval(() => {
     const remaining = _nextRefreshAt - Date.now();
     if (remaining <= 0) return;
@@ -586,11 +584,9 @@ function scheduleHourlyRefresh() {
     const el = document.getElementById('countdownText');
     if (el) el.textContent = `${m}m ${s.toString().padStart(2,'0')}s`;
   }, 1000);
-
-  // Auto-refresh trigger
   _autoRefreshTimer = setTimeout(() => {
     doLiveRefresh();
-    scheduleHourlyRefresh(); // reschedule after refresh
+    scheduleHourlyRefresh();
   }, HOURLY_INTERVAL_MS);
 }
 
@@ -721,23 +717,36 @@ function populateFilters(rows, C) {
     });
     if (current) sel.value = current;
   }
-  if (C.customer) fillSelect('filterCustomer', rows.map(r => (r[C.customer]||'').trim()));
-  if (C.queue)    fillSelect('filterQueue',    rows.map(r => (r[C.queue]||'').trim()));
-  if (C.month)    fillSelect('filterMonth',    rows.map(r => (r[C.month]||'').trim()));
+  if (C.customer)  fillSelect('filterCustomer',  rows.map(r => (r[C.customer]||'').trim()));
+  if (C.queue)     fillSelect('filterQueue',      rows.map(r => (r[C.queue]||'').trim()));
+  if (C.month)     fillSelect('filterMonth',      rows.map(r => (r[C.month]||'').trim()));
+  // ✅ CHANGE 3: Populate Sub Status filter; hide wrapper if column not found
+  if (C.subStatus) {
+    fillSelect('filterSubStatus', rows.map(r => (r[C.subStatus]||'').trim()));
+    const wrap = document.getElementById('filterSubStatusWrap');
+    if (wrap) wrap.style.display = 'flex';
+  } else {
+    const wrap = document.getElementById('filterSubStatusWrap');
+    if (wrap) wrap.style.display = 'none';
+  }
 }
 
 function applyFilters() {
   const customer  = document.getElementById('filterCustomer')?.value || '';
   const queue     = document.getElementById('filterQueue')?.value || '';
   const month     = document.getElementById('filterMonth')?.value || '';
+  // ✅ CHANGE 3: Read Sub Status filter value
+  const subStatus = document.getElementById('filterSubStatus')?.value || '';
   const dateFrom  = document.getElementById('filterDateFrom')?.value || '';
   const dateTo    = document.getElementById('filterDateTo')?.value || '';
   const C = _colMap;
 
   let filtered = _allRows;
-  if (customer) filtered = filtered.filter(r => (r[C.customer]||'').trim() === customer);
-  if (queue)    filtered = filtered.filter(r => (r[C.queue]||'').trim() === queue);
-  if (month)    filtered = filtered.filter(r => (r[C.month]||'').trim() === month);
+  if (customer)  filtered = filtered.filter(r => (r[C.customer]||'').trim() === customer);
+  if (queue)     filtered = filtered.filter(r => (r[C.queue]||'').trim() === queue);
+  if (month)     filtered = filtered.filter(r => (r[C.month]||'').trim() === month);
+  // ✅ CHANGE 3: Apply Sub Status filter
+  if (subStatus && C.subStatus) filtered = filtered.filter(r => (r[C.subStatus]||'').trim() === subStatus);
   if (dateFrom || dateTo) {
     const from = dateFrom ? new Date(dateFrom) : null;
     const to   = dateTo   ? new Date(dateTo)   : null;
@@ -753,8 +762,8 @@ function applyFilters() {
     });
   }
 
-  // Show filter count
-  const isFiltered = customer || queue || month || dateFrom || dateTo;
+  // ✅ CHANGE 3: Include subStatus in isFiltered check
+  const isFiltered = customer || queue || month || subStatus || dateFrom || dateTo;
   const fc = document.getElementById('filterCount');
   if (fc) {
     fc.style.display = isFiltered ? 'inline' : 'none';
@@ -766,7 +775,8 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  ['filterCustomer','filterQueue','filterMonth'].forEach(id => {
+  // ✅ CHANGE 3: Include filterSubStatus in reset
+  ['filterCustomer','filterQueue','filterMonth','filterSubStatus'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   ['filterDateFrom','filterDateTo'].forEach(id => {
@@ -806,6 +816,8 @@ function buildDashboard(rows, filename) {
       reopen:     detect(headers, ['reopen count','reopen','reopened']),
       interaction: detect(headers, ['interaction count','interactions','replies']),
       severity:   detect(headers, ['severity']),
+      // ✅ CHANGE 3: Detect Sub Status column
+      subStatus:  detect(headers, ['sub status','substatus','sub-status','ticket sub status']),
       tech:       detect(headers, ['tech involved','tech_involved','technical']),
       tam:        detect(headers, ['tam account','tam']),
       date:       detect(headers, ['created at','create date','date','created date','creation date']),
@@ -813,7 +825,6 @@ function buildDashboard(rows, filename) {
 
     // Store globally for filter re-use
     _colMap = C;
-    // Only store full dataset on first load (not on filter re-render)
     if (filename !== '__filtered__') {
       _allRows = rows;
       _sourceName = filename;
@@ -848,13 +859,11 @@ function buildDashboard(rows, filename) {
       { num: fmt(resolvedCount), lbl:'Total Resolved', sub: resRate+'% rate', col:'c-teal' },
       { num: fmt(pendingCount), lbl:'Open / Pending', sub: pct(pendingCount,total)+' backlog', col:'c-red' },
     ];
-    // FRT SLA
     if (C.frtSla) {
       const frtW = rows.filter(r=>(r[C.frtSla]||'').toLowerCase().includes('within')).length;
       const frtT = rows.filter(r=>(r[C.frtSla]||'').trim() !== '').length;
       kpis.push({ num: pct(frtW,frtT), lbl:'FRT Within SLA', sub: fmt(frtW)+' / '+fmt(frtT), col: frtW/frtT>.7?'c-green':'c-amber' });
     }
-    // ART SLA
     if (C.artSla) {
       const artW = rows.filter(r=>(r[C.artSla]||'').toLowerCase().includes('within')).length;
       const artT = rows.filter(r=>(r[C.artSla]||'').trim() !== '').length;
@@ -864,19 +873,16 @@ function buildDashboard(rows, filename) {
       <div class="kpi"><div class="kpi-num ${k.col}">${k.num}</div>
       <div class="kpi-lbl">${k.lbl}</div>
       <div class="kpi-sub" style="color:#64748b">${k.sub}</div></div>`).join('');
-    // Adjust grid columns dynamically
     document.getElementById('kpiGrid').style.gridTemplateColumns = `repeat(${kpis.length}, 1fr)`;
 
     // ── WEEKLY TREND ──
     if (C.createWeek && C.resolveWeek) {
       const wc = count(rows, C.createWeek);
       const wr = count(rows, C.resolveWeek);
-      // Sort weeks
       const allWeeks = [...new Set([...Object.keys(wc),...Object.keys(wr)])].filter(Boolean);
       const parseWeekNum = w => { const m = w.match(/\d+/); return m ? parseInt(m[0]) : 999; };
       allWeeks.sort((a,b)=>{
         const na=parseWeekNum(a), nb=parseWeekNum(b);
-        // Weeks 40+ = Dec (last year), weeks <40 = current year
         const wa = na>=40 ? na-53 : na;
         const wb2 = nb>=40 ? nb-53 : nb;
         return wa - wb2;
@@ -903,7 +909,6 @@ function buildDashboard(rows, filename) {
             y2:{ position:'right', grid:{drawOnChartArea:false}, ticks:{font:{size:9}, callback:v=>v+'%'}, min:0, max:180 }
           }}
       });
-      // Low resolve weeks
       const lowWeeks = allWeeks.filter((w,i)=>rates[i]<80);
       document.getElementById('weeklyIns').textContent = lowWeeks.length
         ? `⚠ Low resolve rate weeks: ${lowWeeks.map(w=>w.replace('Week - ','W')).join(', ')} — these drove backlog accumulation`
@@ -928,14 +933,24 @@ function buildDashboard(rows, filename) {
     } else { document.getElementById('sourceChart').closest('.card').style.display='none'; }
 
     // ── MOM ──
+    // ✅ CHANGE 1: Use resolveMonth column for resolved count instead of status+month
     if (C.month && months.length) {
       const mCreate = {}, mResolve = {};
       months.forEach(m=>{ mCreate[m]=0; mResolve[m]=0; });
       rows.forEach(r=>{
         const m=(r[C.month]||'').trim(); if(mCreate[m]!==undefined) mCreate[m]++;
       });
-      // Resolved = tickets created in that month with status Complete/Resolved/Closed
-      resolved.forEach(r=>{ const m=(r[C.month]||'').trim(); if(mResolve[m]!==undefined) mResolve[m]++; });
+
+      if (C.resolveMonth) {
+        // Use the dedicated Resolve Month column — counts tickets resolved in that month
+        rows.forEach(r=>{
+          const m=(r[C.resolveMonth]||'').trim();
+          if(m && mResolve[m]!==undefined) mResolve[m]++;
+        });
+      } else {
+        // Fallback: tickets created in that month AND marked resolved/closed
+        resolved.forEach(r=>{ const m=(r[C.month]||'').trim(); if(mResolve[m]!==undefined) mResolve[m]++; });
+      }
 
       makeChart('momChart', {
         type:'bar',
@@ -1008,10 +1023,9 @@ function buildDashboard(rows, filename) {
     } else { document.getElementById('customerChart').closest('.card').style.display='none'; }
 
     // ── DAY-ON-DAY TREND (last 7 days from data) ──
-    // Try to detect a full date column
+    // ✅ CHANGE 2: Also plot resolved count on the same chart
     const dateCol = detect(headers, ['created at','create date','created date','date created','created_at','date','created on','ticket date','open date','open time']);
     if (dateCol) {
-      // Parse all row dates
       const parsed = rows.map(r => {
         const raw = (r[dateCol]||'').toString().trim();
         const d = new Date(raw);
@@ -1019,12 +1033,10 @@ function buildDashboard(rows, filename) {
       }).filter(Boolean);
 
       if (parsed.length) {
-        // Find the latest date IN the data
         const maxTs = Math.max(...parsed.map(d=>d.getTime()));
         const maxDate = new Date(maxTs);
         const dataMax = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
 
-        // Build last 7 calendar days ending at dataMax
         const days7 = [];
         for (let i=6; i>=0; i--) {
           const d = new Date(dataMax); d.setDate(d.getDate()-i);
@@ -1042,23 +1054,65 @@ function buildDashboard(rows, filename) {
         );
         const dodLabels = days7.map(d => d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}));
 
-        // Date range badge
         const rangeStart = days7[0].toLocaleDateString('en-GB',{day:'numeric',month:'short'});
         const rangeEnd   = days7[6].toLocaleDateString('en-GB',{day:'numeric',month:'short'});
         document.getElementById('dodBadge').textContent = `${rangeStart} – ${rangeEnd}`;
 
+        // ✅ CHANGE 2: Detect resolve date column and compute resolved counts per day
+        const resDateCol = detect(headers, ['resolved at','resolve date','resolved date','closed at','close date','resolution date','resolved_at','closed_at']);
+        let dodResolvedCounts = null;
+        if (resDateCol) {
+          const allResParsedFlat = rows.map(r => {
+            const raw = (r[resDateCol]||'').toString().trim();
+            const d = new Date(raw);
+            return isNaN(d.getTime()) ? null : d;
+          });
+          dodResolvedCounts = days7.map(day =>
+            allResParsedFlat.filter(d => d && d.getFullYear()===day.getFullYear() && d.getMonth()===day.getMonth() && d.getDate()===day.getDate()).length
+          );
+        }
+
+        const dodDatasets = [
+          {
+            label:'Tickets Created',
+            data:dodCounts,
+            borderColor:COLORS.teal,
+            backgroundColor:'rgba(0,180,160,0.12)',
+            fill:true,
+            tension:0.35,
+            pointBackgroundColor:COLORS.teal,
+            pointRadius:5,
+            borderWidth:2.5
+          }
+        ];
+        if (dodResolvedCounts) {
+          dodDatasets.push({
+            label:'Tickets Resolved',
+            data:dodResolvedCounts,
+            borderColor:COLORS.navy,
+            backgroundColor:'rgba(15,34,64,0.07)',
+            fill:true,
+            tension:0.35,
+            pointBackgroundColor:COLORS.navy,
+            pointRadius:5,
+            borderWidth:2.5
+          });
+        }
+
         makeChart('dodChart', {
           type:'line',
-          data:{ labels:dodLabels,
-            datasets:[{ label:'Tickets Created', data:dodCounts, borderColor:COLORS.teal, backgroundColor:'rgba(0,180,160,0.12)', fill:true, tension:0.35, pointBackgroundColor:COLORS.teal, pointRadius:5, borderWidth:2.5 }]},
+          data:{ labels:dodLabels, datasets:dodDatasets },
           options:{ responsive:true, maintainAspectRatio:false,
-            plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false} },
+            plugins:{
+              legend:{ display: dodResolvedCounts !== null, position:'top', labels:{font:{size:10}, boxWidth:12, padding:8} },
+              tooltip:{mode:'index',intersect:false}
+            },
             scales:{ x:{grid:{display:false},ticks:{font:{size:10}}}, y:{grid:{color:'#f1f5f9'},ticks:{font:{size:9}}, beginAtZero:true} }},
           plugins: barLabelsPlugin()
         });
         const maxDoD = Math.max(...dodCounts), minDoD = Math.min(...dodCounts);
         const maxDoDDay = dodLabels[dodCounts.indexOf(maxDoD)];
-        document.getElementById('dodIns').textContent = `📈 Highest: ${maxDoDDay} (${fmt(maxDoD)} tickets). Range across 7 days: ${fmt(minDoD)}–${fmt(maxDoD)}`;
+        document.getElementById('dodIns').textContent = `📈 Highest created: ${maxDoDDay} (${fmt(maxDoD)} tickets). Range across 7 days: ${fmt(minDoD)}–${fmt(maxDoD)}`;
       } else {
         document.getElementById('dodChart').closest('.card').style.display='none';
       }
@@ -1071,7 +1125,6 @@ function buildDashboard(rows, filename) {
       const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
       const dayData = count(rows, C.day);
       const days = DAY_ORDER.filter(d=>dayData[d]);
-      // Calculate number of distinct weeks to get avg
       let numWeeks = 1;
       if (C.createWeek) {
         numWeeks = new Set(rows.map(r=>(r[C.createWeek]||'').trim()).filter(Boolean)).size || 1;
@@ -1151,38 +1204,31 @@ function buildDashboard(rows, filename) {
       document.getElementById('reopenIns').textContent = `⚠ ${reopenedPct} of tickets reopened at least once — first-contact resolution improvement needed`;
     } else { document.getElementById('reopenChart').closest('.card').style.display='none'; }
 
-    // ── DISP L3 TREND — split by L2 type (Issue / Query / Service Request) ──
+    // ── DISP L3 TREND — split by L2 type ──
     if (C.dispL3 && C.month && months.length) {
       if (C.dispL2) {
-        // Find which L2 types exist in data (case-insensitive match for the 3 known types)
         const TYPE_KEYWORDS = [
           { key:'issue',           label:'Issue',           color: COLORS.red    },
           { key:'query',           label:'Query',           color: COLORS.blue   },
           { key:'service request', label:'Service Request', color: COLORS.teal   },
         ];
-        // Discover actual L2 values in data
         const l2Values = [...new Set(rows.map(r=>(r[C.dispL2]||'').trim()).filter(Boolean))];
-        // Map each known type keyword to the actual L2 value(s) that match
         const typeGroups = TYPE_KEYWORDS.map(t => ({
           ...t,
           l2Matches: l2Values.filter(v => v.toLowerCase().includes(t.key))
         })).filter(t => t.l2Matches.length > 0);
 
         if (typeGroups.length > 0) {
-          // Hide fallback, show grid
           document.getElementById('disp3FallbackCard').style.display = 'none';
-          // Adjust grid columns to match number of types found
           document.getElementById('subCatGrid').style.gridTemplateColumns = `repeat(${Math.min(typeGroups.length,3)}, 1fr)`;
 
           typeGroups.forEach((typeGroup, idx) => {
-            if (idx > 2) return; // max 3
+            if (idx > 2) return;
             const card = document.getElementById(`subCatCard_${idx}`);
             card.style.display = 'block';
             document.getElementById(`subCatTitle_${idx}`).textContent = `${typeGroup.label} — Top Sub-categories`;
 
-            // Filter rows belonging to this L2 type
             const typeRows = rows.filter(r => typeGroup.l2Matches.includes((r[C.dispL2]||'').trim()));
-            // Find top 5 L3 sub-cats within this type
             const cats = topN(count(typeRows.filter(r=>r[C.dispL3]), C.dispL3), 5).map(x=>x[0]);
 
             if (cats.length === 0) {
@@ -1222,13 +1268,11 @@ function buildDashboard(rows, filename) {
           });
 
         } else {
-          // L2 exists but doesn't match known types — fall back to single combined chart
           document.getElementById('subCatGrid').style.display = 'none';
           document.getElementById('disp3FallbackCard').style.display = 'block';
           _buildDisp3Fallback(rows, C, months);
         }
       } else {
-        // No L2 col — show fallback single chart
         document.getElementById('subCatGrid').style.display = 'none';
         document.getElementById('disp3FallbackCard').style.display = 'block';
         _buildDisp3Fallback(rows, C, months);
@@ -1315,7 +1359,7 @@ function buildDashboard(rows, filename) {
 }
 
 // ═══════════════════════════════════════════════
-let _pptData = null; // store computed data for PPT
+let _pptData = null;
 
 async function generatePPT() {
   const btns = [document.getElementById('btnPpt'), document.getElementById('btnPpt2')];
@@ -1325,34 +1369,29 @@ async function generatePPT() {
     const d = _pptData;
     if (!d) { alert('Please upload a file first.'); return; }
 
-    // Color palette (no # prefix for pptxgenjs)
     const C = { navy:'0F2240', navy2:'1A3557', teal:'00B4A0', amber:'F59E0B',
                 red:'EF4444', green:'22C55E', blue:'3B82F6', purple:'8B5CF6',
                 slate:'64748B', white:'FFFFFF', lightBg:'F0F4F8', cardBg:'FFFFFF' };
 
     const pres = new PptxGenJS();
-    pres.layout = 'LAYOUT_WIDE'; // 13.3 x 7.5 inches
+    pres.layout = 'LAYOUT_WIDE';
     pres.title = 'CXO Ticket Analytics';
     pres.author = 'CXO Analytics Tool';
 
     const W = 13.3, H = 7.5;
     const MARGIN = 0.35;
 
-    // ── Helper: add slide header bar ──
     function addSlideHeader(slide, title, subtitle) {
       slide.background = { color: 'F0F4F8' };
-      // Top navy bar
       slide.addShape(pres.ShapeType.rect, { x:0, y:0, w:W, h:0.75, fill:{color:C.navy}, line:{color:C.navy} });
       slide.addShape(pres.ShapeType.rect, { x:0, y:0.75, w:W, h:0.04, fill:{color:C.teal}, line:{color:C.teal} });
       slide.addText('🎯 CXO Ticket Analytics', { x:MARGIN, y:0, w:7, h:0.75, fontSize:16, bold:true, color:C.white, valign:'middle', margin:0 });
       slide.addText(title, { x:MARGIN, y:1.0, w:W-2*MARGIN, h:0.45, fontSize:18, bold:true, color:C.navy, valign:'middle', margin:0 });
       if (subtitle) slide.addText(subtitle, { x:MARGIN, y:1.45, w:W-2*MARGIN, h:0.28, fontSize:10, color:C.slate, valign:'top', margin:0 });
-      // Footer
       slide.addShape(pres.ShapeType.rect, { x:0, y:H-0.3, w:W, h:0.3, fill:{color:C.navy2}, line:{color:C.navy2} });
       slide.addText(`Generated: ${new Date().toLocaleString()} · ${d.filename}`, { x:MARGIN, y:H-0.3, w:W-2*MARGIN, h:0.3, fontSize:8, color:'AACCEE', valign:'middle', margin:0 });
     }
 
-    // ── Helper: KPI box ──
     function addKpiBox(slide, x, y, w, h, num, label, sub, accentColor) {
       slide.addShape(pres.ShapeType.rect, { x, y, w, h, fill:{color:C.cardBg}, line:{color:'E2E8F0', pt:1}, shadow:{type:'outer',color:'000000',opacity:0.07,blur:4,offset:2,angle:135} });
       slide.addShape(pres.ShapeType.rect, { x, y, w:0.05, h, fill:{color:accentColor}, line:{color:accentColor} });
@@ -1361,18 +1400,15 @@ async function generatePPT() {
       if(sub) slide.addText(sub, { x:x+0.12, y:y+h*0.78, w:w-0.2, h:h*0.22, fontSize:8, color:C.slate, valign:'top', margin:0 });
     }
 
-    // ── Helper: section label ──
     function addSectionLabel(slide, text, x, y, w) {
       slide.addShape(pres.ShapeType.rect, { x, y, w:0.06, h:0.22, fill:{color:C.teal}, line:{color:C.teal} });
       slide.addText(text.toUpperCase(), { x:x+0.12, y, w:w, h:0.22, fontSize:9, bold:true, color:C.navy2, valign:'middle', margin:0, charSpacing:1 });
     }
 
-    // ── Helper: card background ──
     function addCard(slide, x, y, w, h) {
       slide.addShape(pres.ShapeType.rect, { x, y, w, h, fill:{color:C.cardBg}, line:{color:'E2E8F0', pt:1}, shadow:{type:'outer',color:'000000',opacity:0.06,blur:5,offset:2,angle:135} });
     }
 
-    // ── Helper: capture chart as base64 ──
     function chartToBase64(chartId) {
       try {
         const canvas = document.getElementById(chartId);
@@ -1381,7 +1417,7 @@ async function generatePPT() {
       } catch(e) { return null; }
     }
 
-    // ═══ SLIDE 1: TITLE ═══
+    // SLIDE 1: TITLE
     const slide1 = pres.addSlide();
     slide1.background = { color: C.navy };
     slide1.addShape(pres.ShapeType.rect, { x:0, y:0, w:0.18, h:H, fill:{color:C.teal}, line:{color:C.teal} });
@@ -1399,7 +1435,7 @@ async function generatePPT() {
       { text: `Generated ${new Date().toLocaleDateString()}`, options:{color:'AACCEE'} }
     ], { x:0.5, y:5.35, w:W-1, h:0.35, fontSize:11, align:'center', valign:'middle' });
 
-    // ═══ SLIDE 2: KPI OVERVIEW ═══
+    // SLIDE 2: KPI OVERVIEW
     const slide2 = pres.addSlide();
     addSlideHeader(slide2, 'Executive Summary — Key Metrics', `${d.fmt(d.total)} total tickets · ${d.filename}`);
     const kpiY = 1.85, kpiH = 1.15;
@@ -1408,8 +1444,6 @@ async function generatePPT() {
     d.kpis.slice(0,6).forEach((k, i) => {
       addKpiBox(slide2, MARGIN + i*(kpiW+0.15), kpiY, kpiW, kpiH, k.num, k.lbl, k.sub, kpiColors[i]);
     });
-
-    // Summary insights below KPIs
     const insY = kpiY + kpiH + 0.25;
     addCard(slide2, MARGIN, insY, W-2*MARGIN, H-insY-0.6);
     addSectionLabel(slide2, 'Performance Highlights', MARGIN+0.15, insY+0.15, 6);
@@ -1421,13 +1455,15 @@ async function generatePPT() {
     slide2.addText(highlights.map((h,i) => ({ text: h, options:{breakLine: i<highlights.length-1, paraSpaceAfter:6} })),
       { x:MARGIN+0.15, y:insY+0.48, w:W-2*MARGIN-0.3, h:H-insY-0.6-0.55, fontSize:12, color:C.navy2, valign:'top', margin:0 });
 
-    // ═══ SLIDE 3: VOLUME TREND ═══
+    const contentY = 1.85;
+    const contentH = H - contentY - 0.55;
+    const halfW = (W - 2*MARGIN - 0.2) / 2;
+
+    // SLIDE 3: VOLUME TREND
     const slide3 = pres.addSlide();
     addSlideHeader(slide3, 'Volume Trends — Weekly Created vs Resolved', 'Weekly ticket creation and resolution with resolve rate %');
     const weeklyImg = chartToBase64('weeklyChart');
     const sourceImg = chartToBase64('sourceChart');
-    const contentY = 1.85;
-    const contentH = H - contentY - 0.55;
     if (weeklyImg) {
       addCard(slide3, MARGIN, contentY, W*0.63-0.1, contentH);
       addSectionLabel(slide3, 'Weekly Trend — Created vs Resolved', MARGIN+0.15, contentY+0.12, 7);
@@ -1440,12 +1476,11 @@ async function generatePPT() {
       slide3.addImage({ data: sourceImg, x: sx+0.1, y: contentY+0.4, w: W-sx-MARGIN-0.2, h: contentH-0.55 });
     }
 
-    // ═══ SLIDE 4: MONTHLY BREAKDOWN ═══
+    // SLIDE 4: MONTHLY BREAKDOWN
     const slide4 = pres.addSlide();
     addSlideHeader(slide4, 'Monthly Breakdown — Volume & Queue Distribution', 'Month-on-month ticket creation and resolution patterns');
     const momImg = chartToBase64('momChart');
     const queueImg = chartToBase64('queueChart');
-    const halfW = (W - 2*MARGIN - 0.2) / 2;
     if (momImg) {
       addCard(slide4, MARGIN, contentY, halfW, contentH);
       addSectionLabel(slide4, 'Month-on-Month: Created vs Resolved', MARGIN+0.15, contentY+0.12, halfW-0.3);
@@ -1457,7 +1492,7 @@ async function generatePPT() {
       slide4.addImage({ data: queueImg, x: MARGIN+halfW+0.3, y: contentY+0.4, w: halfW-0.2, h: contentH-0.55 });
     }
 
-    // ═══ SLIDE 5: CATEGORIES & CUSTOMERS ═══
+    // SLIDE 5: CATEGORIES & CUSTOMERS
     const slide5 = pres.addSlide();
     addSlideHeader(slide5, 'Ticket Categories & Top Customers', 'Category breakdown by month and customer volume analysis');
     const dispImg = chartToBase64('dispChart');
@@ -1473,7 +1508,7 @@ async function generatePPT() {
       slide5.addImage({ data: custImg, x: MARGIN+halfW+0.3, y: contentY+0.4, w: halfW-0.2, h: contentH-0.55 });
     }
 
-    // ═══ SLIDE 6: DAILY TRENDS ═══
+    // SLIDE 6: DAILY TRENDS
     const slide6 = pres.addSlide();
     addSlideHeader(slide6, 'Daily Trends — Day-on-Day & Day of Week', 'Recent 7-day ticket volume and average by day of week');
     const dodImg = chartToBase64('dodChart');
@@ -1489,7 +1524,7 @@ async function generatePPT() {
       slide6.addImage({ data: dayImg, x: MARGIN+halfW+0.3, y: contentY+0.4, w: halfW-0.2, h: contentH-0.55 });
     }
 
-    // ═══ SLIDE 7: SLA & QUALITY ═══
+    // SLIDE 7: SLA & QUALITY
     const slide7 = pres.addSlide();
     addSlideHeader(slide7, 'SLA Compliance, Response Time & Quality', 'SLA adherence, First Response Time and reopen rate analysis');
     const slaImg = chartToBase64('slaChart');
@@ -1503,10 +1538,9 @@ async function generatePPT() {
       if(img) slide7.addImage({ data: img, x: cx+0.1, y: contentY+0.4, w: thirdW-0.2, h: contentH-0.55 });
     });
 
-    // ═══ SLIDE 8: ISSUE SUB-TYPES BY CATEGORY ═══
+    // SLIDE 8: ISSUE SUB-TYPES
     const slide8 = pres.addSlide();
     addSlideHeader(slide8, 'Issue Sub-types by Category', 'Top sub-categories for Issue, Query and Service Request');
-    // Try the 3 per-type charts first, fall back to single combined
     const subCatImgs = [
       chartToBase64('subCatChart_0'),
       chartToBase64('subCatChart_1'),
@@ -1525,7 +1559,7 @@ async function generatePPT() {
       slide8.addImage({ data: img, x: cx+0.1, y: contentY+0.4, w: subW-0.2, h: contentH-0.55 });
     });
 
-    // ═══ SLIDE 8b: SEVERITY ═══
+    // SLIDE 8b: SEVERITY
     const slide8b = pres.addSlide();
     addSlideHeader(slide8b, 'Severity Distribution', 'Breakdown of tickets by severity level');
     const sevImg = chartToBase64('sevChart');
@@ -1536,7 +1570,7 @@ async function generatePPT() {
       slide8b.addImage({ data: sevImg, x: MARGIN+0.1, y: contentY+0.4, w: sevW-0.2, h: contentH-0.55 });
     }
 
-    // ═══ SLIDE 9: RECOMMENDATIONS ═══
+    // SLIDE 9: RECOMMENDATIONS
     const slide9 = pres.addSlide();
     addSlideHeader(slide9, 'Key Insights & Recommended Actions', 'AI-generated observations from the ticket data');
     const recs = [
@@ -1556,7 +1590,6 @@ async function generatePPT() {
       slide9.addText(r.body, { x:MARGIN+3.15, y:ry+0.05, w:W-2*MARGIN-3.3, h:recH-0.1, fontSize:11, color:C.slate, valign:'middle', margin:0 });
     });
 
-    // ─ Write file ─
     const safeName = (d.filename || 'TicketAnalytics').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g,'_');
     await pres.writeFile({ fileName: `CXO_Analytics_${safeName}.pptx` });
 
@@ -1568,7 +1601,7 @@ async function generatePPT() {
   }
 }
 
-// ── On page load: immediately fetch default sheet (placed last so all functions are defined) ──
+// ── On page load: immediately fetch default sheet ──
 (function initAutoFetch() {
   _isLiveSource = true;
   showLoading();

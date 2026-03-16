@@ -703,17 +703,45 @@ function makeChart(id, config) {
 function barLabelsPlugin() {
   return [{
     id:'dl', afterDatasetsDraw(c) {
+      const datasetCount = c.data.datasets.filter((_,i) => !c.getDatasetMeta(i).hidden).length;
+      let visibleIdx = 0;
       c.data.datasets.forEach((d,i) => {
         const meta = c.getDatasetMeta(i);
         if (meta.hidden) return;
+        const isLine = meta.type === 'line' || d.type === 'line';
         meta.data.forEach((b,j) => {
           const v = d.data[j];
           if (!v || v < 1) return;
-          c.ctx.save(); c.ctx.fillStyle='#334155'; c.ctx.font='bold 9px DM Sans';
-          c.ctx.textAlign='center';
-          c.ctx.fillText(Number(v).toLocaleString(), b.x, b.y - 4);
+          c.ctx.save();
+          // For line charts with multiple datasets, alternate above/below to avoid overlap
+          let yOffset, baseline;
+          if (isLine && datasetCount > 1) {
+            if (visibleIdx === 0) {
+              // First dataset: label above point
+              yOffset = -10;
+              baseline = 'bottom';
+              c.ctx.fillStyle = '#0f766e'; // teal dark
+            } else {
+              // Second dataset: label below point
+              yOffset = 14;
+              baseline = 'top';
+              c.ctx.fillStyle = '#1a3557'; // navy
+            }
+          } else {
+            yOffset = -6;
+            baseline = 'bottom';
+            c.ctx.fillStyle = '#334155';
+          }
+          c.ctx.font = 'bold 9.5px DM Sans';
+          c.ctx.textAlign = 'center';
+          c.ctx.textBaseline = baseline;
+          // Small white halo for readability
+          c.ctx.shadowColor = 'rgba(255,255,255,0.9)';
+          c.ctx.shadowBlur = 4;
+          c.ctx.fillText(Number(v).toLocaleString(), b.x, b.y + yOffset);
           c.ctx.restore();
         });
+        if (!meta.hidden) visibleIdx++;
       });
     }
   }];

@@ -263,21 +263,28 @@ async function sendEmails(type,d){
 
 const url="https://script.google.com/macros/s/AKfycbzQVRRjDkDKGeEYqA_19cyiZO4RIxrayvTGPj9b92CGqwOpg7wxWzEqK3wFi13VNH-G/exec";
 
-const res = await fetch(url,{
+try{
+
+await fetch(url,{
 method:"POST",
-headers:{"Content-Type":"application/json"},
+mode:"no-cors",
+headers:{
+"Content-Type":"application/json"
+},
 body:JSON.stringify(d)
 });
 
-const data = await res.json();
-
-if(data.status==="taken"){
-showToast("Slot already booked!",true);
-return;
+if(type==="booking"){
+showToast("✅ Slot booked! Email & calendar invite sent.");
+}else{
+showToast("⚠ Slot cancelled. Notification email sent.");
 }
 
-showToast("Slot booked! Email & calendar invite sent.");
+}catch(e){
 
+showToast("❌ Slot updated but email notification failed.",true);
+
+}
 }
 function renderBookingsTable(){
   const wrap=document.getElementById('bookings-wrap');

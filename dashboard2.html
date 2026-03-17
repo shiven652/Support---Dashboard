@@ -263,31 +263,30 @@ async function sendEmails(type,d){
 
 const url="https://script.google.com/macros/s/AKfycbzQVRRjDkDKGeEYqA_19cyiZO4RIxrayvTGPj9b92CGqwOpg7wxWzEqK3wFi13VNH-G/exec";
 
-const params = new URLSearchParams({
-name:d.name,
-email:d.email,
-project:d.project,
-client:d.client,
-day:d.day,
-date:d.date,
-time:d.time
-});
+try{
 
-const img = new Image();
-img.src = url + "?" + params.toString();
+await fetch(url,{
+method:"POST",
+mode:"no-cors",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify(d)
+});
 
 if(type==="booking"){
 showToast("✅ Slot booked! Email & calendar invite sent.");
 }else{
 showToast("⚠ Slot cancelled. Notification email sent.");
 }
+
 }catch(e){
 
 showToast("❌ Slot updated but email notification failed.",true);
 
 }
-}
-function renderBookingsTable(){
+
+}function renderBookingsTable(){
   const wrap=document.getElementById('bookings-wrap');
   const all=Object.values(bookings);
   if(!all.length){wrap.innerHTML='<div class="no-bookings">No bookings yet. Click Available + to book a slot.</div>';return;}

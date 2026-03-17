@@ -125,6 +125,7 @@
             <div class="field"><label>Email Address</label><input type="email" id="f-email" placeholder="e.g. rahul@company.com"><div class="err-msg" id="e-email">Please enter a valid email</div></div>
             <div class="field"><label>Project Name</label><input type="text" id="f-project" placeholder="e.g. CRM Migration"><div class="err-msg" id="e-project">Please enter a project name</div></div>
             <div class="field"><label>Client Name</label><input type="text" id="f-client" placeholder="e.g. Acme Corp"><div class="err-msg" id="e-client">Please enter a client name</div></div>
+            <div class="field"><label>Remarks</label><input type="text" id="f-remarks" placeholder="Any additional notes..."><div class="err-msg" id="e-remarks">Please enter remarks</div></div>
         </div>
         <div class="modal-footer">
             <button class="cancel-modal-btn" onclick="closeModal()">Cancel</button>
@@ -222,13 +223,14 @@ function renderBookingsTable(){
         return;
     }
     wrap.innerHTML = `<div class="bookings-table-wrap"><table class="bookings-table">
-        <thead><tr><th>#</th><th>Day & Date</th><th>Time Slot</th><th>Name</th><th>Email</th><th>Project</th><th>Client</th></tr></thead>
+        <thead><tr><th>#</th><th>Day & Date</th><th>Time Slot</th><th>Name</th><th>Email</th><th>Project</th><th>Client</th><th>Remarks</th></tr></thead>
         <tbody>${all.map((b, idx) => `<tr>
             <td style="color:#aaa">${idx+1}</td>
             <td><strong>${b.day}</strong><br><span style="color:#aaa;font-size:11px">${b.date}</span></td>
             <td>${b.time}</td><td>${b.name}</td>
             <td style="color:#555">${b.email}</td>
             <td>${b.project}</td><td>${b.client}</td>
+            <td>${b.remarks || '-'}</td>
         </tr>`).join('')}</tbody>
     </table></div>`;
 }
@@ -252,7 +254,7 @@ async function fetchLiveBookings() {
 function openModal(dk, i, dayLabel){
     pendingKey = {dk, i, dayLabel};
     document.getElementById('modal-sub').textContent = `${dayLabel} · ${SLOTS[i].start} – ${SLOTS[i].end}`;
-    ['name','email','project','client'].forEach(f => {
+    ['name','email','project','client','remarks'].forEach(f => {
         document.getElementById('f-'+f).value = '';
         document.getElementById('f-'+f).classList.remove('err');
         document.getElementById('e-'+f).classList.remove('show');
@@ -274,6 +276,7 @@ async function confirmBooking(){
     const email = document.getElementById('f-email').value.trim();
     const project = document.getElementById('f-project').value.trim();
     const client = document.getElementById('f-client').value.trim();
+    const remarks = document.getElementById('f-remarks').value.trim();
     
     // Validation
     let ok = true;
@@ -287,6 +290,7 @@ async function confirmBooking(){
     document.getElementById('f-email').classList.toggle('err', !emailValid);
     document.getElementById('e-email').classList.toggle('show', !emailValid);
     if(!emailValid) ok = false;
+    
     if(!ok) return;
 
     setLoading(true);
@@ -298,7 +302,7 @@ async function confirmBooking(){
         day: dayLabel,
         date: fmtDate(dk === 'tue' ? tue : thu),
         time: `${SLOTS[i].start} – ${SLOTS[i].end}`,
-        name, email, project, client
+        name, email, project, client, remarks
     };
 
     try {

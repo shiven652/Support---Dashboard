@@ -139,10 +139,8 @@
 <script>
 const ADMIN_EMAIL='shivendra.singh@kapturecrm.com';
 const SLOTS=[
-  {start:'12:30 PM',end:'1:00 PM'},{start:'1:00 PM',end:'1:30 PM'},
-  {start:'1:30 PM',end:'2:00 PM'},{start:'2:00 PM',end:'2:30 PM'},
-  {start:'2:30 PM',end:'3:00 PM'},{start:'3:00 PM',end:'3:30 PM'},
-  {start:'3:30 PM',end:'4:00 PM'}
+  {start:'1:00 PM',end:'1:30 PM'},
+  {start:'1:30 PM',end:'2:00 PM'}
 ];
 let weekOffset=0,bookings={},pendingKey=null;
 
@@ -262,44 +260,37 @@ async function cancelSlot(dk,i,dayLabel){
 }
 
 async function sendEmails(type,d){
-  const isBook=type==='booking';
-  const subject=isBook
-    ?`[Kapture CX] Slot Booked – ${d.day} ${d.time}`
-    :`[Kapture CX] Slot Cancelled – ${d.day} ${d.time}`;
 
-  const adminBody=isBook
-    ?`Hi Admin,\n\nA new slot has been booked.\n\nName: ${d.name}\nEmail: ${d.email}\nProject: ${d.project}\nClient: ${d.client}\nDay: ${d.day}, ${d.date}\nTime: ${d.time}\n\nRegards,\nKapture CX Portal`
-    :`Hi Admin,\n\nA slot has been cancelled and is now available for rebooking.\n\nName: ${d.name}\nEmail: ${d.email}\nProject: ${d.project}\nClient: ${d.client}\nDay: ${d.day}, ${d.date}\nTime: ${d.time}\n\nRegards,\nKapture CX Portal`;
+const url="https://script.google.com/macros/s/AKfycbypYNU83rRcDIQmZap3IgbFxNHPQ0K_cc1-IQsSQcAR6O6ut7_3rol1gkJBldcgM8QQ/exec";
 
-  const bookerBody=isBook
-    ?`Hi ${d.name},\n\nYour slot is confirmed!\n\nProject: ${d.project}\nClient: ${d.client}\nDay: ${d.day}, ${d.date}\nTime: ${d.time}\n\nPlease be available at the scheduled time.\n\nRegards,\nKapture CX Portal`
-    :`Hi ${d.name},\n\nYour slot on ${d.day}, ${d.date} at ${d.time} has been cancelled.\n\nYou can rebook anytime via the portal.\n\nRegards,\nKapture CX Portal`;
+try{
 
-  const prompt=`You must send exactly 2 emails using Gmail right now. Do not ask questions, just send them immediately.\n\nEmail 1:\nTo: ${ADMIN_EMAIL}\nSubject: ${subject}\nBody:\n${adminBody}\n\n---\n\nEmail 2:\nTo: ${d.email}\nSubject: ${subject}\nBody:\n${bookerBody}\n\nSend both emails now using the Gmail send tool.`;
+await fetch(url,{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+type:type,
+name:d.name,
+email:d.email,
+project:d.project,
+client:d.client,
+day:d.day,
+date:d.date,
+time:d.time
+})
+});
 
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}],
-        mcp_servers:[{type:'url',url:'https://gmail.mcp.claude.com/mcp',name:'gmail'}]
-      })
-    });
-    const data=await res.json();
-    const used=data.content&&data.content.some(c=>c.type==='mcp_tool_use'&&c.name&&c.name.toLowerCase().includes('send'));
-    if(used||data.content){
-      showToast(isBook?'Slot booked! Confirmation emails sent to both parties.':'Slot cancelled & reopened. Notification emails sent.');
-    } else {
-      showToast(isBook?'Slot booked! (Email delivery pending)':'Slot cancelled & reopened. (Email delivery pending)',true);
-    }
-  }catch(e){
-    showToast(isBook?'Slot booked — email notification failed.':'Slot cancelled & reopened — email notification failed.',true);
-  }
+showToast(type==='booking'
+?'Slot booked! Confirmation emails sent.'
+:'Slot cancelled & reopened. Email notification sent.');
+
+}catch(e){
+
+showToast('Email notification failed.',true);
+
 }
 
+}
 function renderBookingsTable(){
   const wrap=document.getElementById('bookings-wrap');
   const all=Object.values(bookings);

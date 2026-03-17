@@ -261,34 +261,22 @@ async function cancelSlot(dk,i,dayLabel){
 
 async function sendEmails(type,d){
 
-const url="https://script.google.com/macros/s/AKfycbypYNU83rRcDIQmZap3IgbFxNHPQ0K_cc1-IQsSQcAR6O6ut7_3rol1gkJBldcgM8QQ/exec";
+const url="PASTE_WEBAPP_URL";
 
-try{
-
-await fetch(url,{
+const res = await fetch(url,{
 method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({
-type:type,
-name:d.name,
-email:d.email,
-project:d.project,
-client:d.client,
-day:d.day,
-date:d.date,
-time:d.time
-})
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(d)
 });
 
-showToast(type==='booking'
-?'Slot booked! Confirmation emails sent.'
-:'Slot cancelled & reopened. Email notification sent.');
+const data = await res.json();
 
-}catch(e){
-
-showToast('Email notification failed.',true);
-
+if(data.status==="taken"){
+showToast("Slot already booked!",true);
+return;
 }
+
+showToast("Slot booked! Email & calendar invite sent.");
 
 }
 function renderBookingsTable(){

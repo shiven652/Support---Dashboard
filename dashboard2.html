@@ -95,14 +95,37 @@
 
 <script>
 // REPLACE WITH YOUR URL
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbznvWWOeQldh7T7tCdTZzz7PKfpfQhVsNoHurdNRl2raNwAT7H2BwUEefa9_DWwrdtU/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcM8VXSILNLlMm-uPkhMZ2GwpBf2CopLFdfjR-5eMcnITdXCId1maWJdV1rPgF9Goc/exec";
 
 const SLOTS = [{s:'1:00 PM', e:'1:30 PM'}, {s:'1:30 PM', e:'2:00 PM'}];
-let weekOffset = 0, bookings = {}, pendingKey = null;
+let weekOffset = 0, bookings = {}, allRows = [], pendingKey = null;
 
-function getWeekDays(o){
+// Month name → index map for robust date parsing
+const MONTH_MAP = {
+    "JAN":0,"FEB":1,"MAR":2,"APR":3,"MAY":4,"JUN":5,
+    "JUL":6,"AUG":7,"SEP":8,"OCT":9,"NOV":10,"DEC":11
+};
+
+/**
+ * Parse a date string like "17 MAR 2026" into a Date object (midnight local time).
+ * Returns null if the string is unparseable.
+ */
+function parseSheetDate(dStr) {
+    if (!dStr) return null;
+    const parts = String(dStr).trim().toUpperCase().split(/\s+/);
+    if (parts.length !== 3) return null;
+    const day   = parseInt(parts[0], 10);
+    const month = MONTH_MAP[parts[1]];
+    const year  = parseInt(parts[2], 10);
+    if (isNaN(day) || month === undefined || isNaN(year)) return null;
+    const d = new Date(year, month, day);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function getWeekDays(o) {
     const now = new Date();
-    const dayOfWeek = now.getDay(); 
+    const dayOfWeek = now.getDay();
     const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) + (o * 7);
     const mon = new Date(now.setDate(diff));
     const tue = new Date(mon); tue.setDate(mon.getDate() + 1);
@@ -110,113 +133,180 @@ function getWeekDays(o){
     return {tue, thu, mon};
 }
 
-function fmtDate(d){return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();}
-function skey(dk, i){return `w${weekOffset}_${dk}_${i}`;}
+function fmtDate(d) {
+    return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase();
+}
 
-async function fetchLive(){
+function skey(dk, i) { return `w${weekOffset}_${dk}_${i}`; }
+
+async function fetchLive() {
     try {
         const r = await fetch(`${SCRIPT_URL}?action=fetch&t=${Date.now()}`);
         const d = await r.json();
-        if (d.success) { 
-            bookings = d.bookings; 
-            render(); 
+        if (d.success) {
+            bookings = d.bookings || {};
+            allRows  = d.allRows  || [];  // ← full flat list from the sheet
+            render();
         }
-    } catch (e) { console.error(e); render(); }
+    } catch (e) {
+        console.error(e);
+        render();
+    }
 }
 
-function render(){
+function render() {
     const {tue, thu, mon} = getWeekDays(weekOffset);
-    const today = new Date(); today.setHours(0,0,0,0);
-    
-    document.getElementById('week-chip').textContent = 'WEEK OF ' + mon.toLocaleDateString('en-GB',{day:'numeric',month:'short'}).toUpperCase();
-    const grid = document.getElementById('days-grid'); grid.innerHTML = '';
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+
+    document.getElementById('week-chip').textContent =
+        'WEEK OF ' + mon.toLocaleDateString('en-GB', {day:'numeric', month:'short'}).toUpperCase();
+
+    const grid = document.getElementById('days-grid');
+    grid.innerHTML = '';
 
     [{l:'Tuesday', d:tue, dk:'tue'}, {l:'Thursday', d:thu, dk:'thu'}].forEach(day => {
         const isPast = day.d < today;
         let slotsHtml = SLOTS.map((s, i) => {
             const k = skey(day.dk, i);
             const b = bookings[k];
-            
-            if(b) {
-                // MODIFIED: Only show Cancel button if it's NOT a past date
-                const cancelBtn = !isPast ? `<button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button>` : '';
-                return `<div class="slot-row"><span>${s.s} – ${s.e}</span><div style="display:flex;gap:8px;"><div class="booked-badge">Booked</div>${cancelBtn}</div></div>`;
+
+            if (b) {
+                const cancelBtn = !isPast
+                    ? `<button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button>`
+                    : '';
+                return `<div class="slot-row">
+                    <span>${s.s} – ${s.e}</span>
+                    <div style="display:flex;gap:8px;">
+                        <div class="booked-badge">Booked</div>${cancelBtn}
+                    </div>
+                </div>`;
             }
-            if(isPast) return `<div class="slot-row" style="opacity:0.6;"><span>${s.s} – ${s.e}</span><div class="closed-badge">Closed</div></div>`;
-            return `<div class="slot-row"><span>${s.s} – ${s.e}</span><button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')"><span class="avail-label">Available</span><span class="avail-plus">+</span></button></div>`;
+            if (isPast) {
+                return `<div class="slot-row" style="opacity:0.6;">
+                    <span>${s.s} – ${s.e}</span>
+                    <div class="closed-badge">Closed</div>
+                </div>`;
+            }
+            return `<div class="slot-row">
+                <span>${s.s} – ${s.e}</span>
+                <button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')">
+                    <span class="avail-label">Available</span><span class="avail-plus">+</span>
+                </button>
+            </div>`;
         }).join('');
-        grid.innerHTML += `<div class="day-card"><div class="day-header"><div>${day.l}<br><small style="color:#aaa;font-size:10px;">${fmtDate(day.d)}</small></div></div><div>${slotsHtml}</div></div>`;
+
+        grid.innerHTML += `<div class="day-card">
+            <div class="day-header">
+                <div>${day.l}<br>
+                <small style="color:#aaa;font-size:10px;">${fmtDate(day.d)}</small></div>
+            </div>
+            <div>${slotsHtml}</div>
+        </div>`;
     });
+
     renderTable();
 }
 
-function renderTable(){
-    const wrap = document.getElementById('bookings-wrap');
-    const today = new Date(); today.setHours(0,0,0,0);
-    
-    // MODIFIED: Robust date parsing for the table
-    const all = Object.values(bookings)
-        .map(b => {
-            const dStr = b.date; // E.g., "17 MAR 2026"
-            const p = dStr.split(' ');
-            const monthMap = {"JAN":0,"FEB":1,"MAR":2,"APR":3,"MAY":4,"JUN":5,"JUL":6,"AUG":7,"SEP":8,"OCT":9,"NOV":10,"DEC":11};
-            b.sortDate = new Date(parseInt(p[2]), monthMap[p[1]], parseInt(p[0]));
-            return b;
-        })
-        .filter(b => b.sortDate >= today)
-        .sort((a,b) => a.sortDate - b.sortDate);
+/**
+ * Renders the Upcoming Booking Details table.
+ * Uses the full `allRows` array from the sheet — NOT the week-scoped `bookings` object.
+ * Filters to rows whose date >= today, sorted ascending.
+ */
+function renderTable() {
+    const wrap  = document.getElementById('bookings-wrap');
+    const today = new Date(); today.setHours(0, 0, 0, 0);
 
-    if(!all.length){ wrap.innerHTML = '<div style="background:#fff;padding:20px;text-align:center;color:#aaa;font-size:12px;">No upcoming bookings found.</div>'; return; }
+    const upcoming = allRows
+        .map(b => ({ ...b, _sortDate: parseSheetDate(b.date) }))
+        .filter(b => b._sortDate && b._sortDate >= today)
+        .sort((a, b) => a._sortDate - b._sortDate);
 
-    wrap.innerHTML = `<table class="bookings-table"><thead><tr><th>Date</th><th>Slot</th><th>Client</th><th>Project</th><th>Name</th><th>Checklist</th></tr></thead><tbody>
-        ${all.map(b => `<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client}</td><td>${b.project || '-'}</td><td>${b.name}</td><td>${b.checklist ? `<a href="${b.checklist}" target="_blank" class="link-btn">View Link</a>` : '-'}</td></tr>`).join('')}
-    </tbody></table>`;
+    if (!upcoming.length) {
+        wrap.innerHTML = `<div style="background:#fff;padding:20px;text-align:center;color:#aaa;font-size:12px;">
+            No upcoming bookings found.
+        </div>`;
+        return;
+    }
+
+    wrap.innerHTML = `
+        <table class="bookings-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Slot</th>
+                    <th>Client</th>
+                    <th>Project</th>
+                    <th>Name</th>
+                    <th>Checklist</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${upcoming.map(b => `
+                    <tr>
+                        <td>${b.date}</td>
+                        <td>${b.time}</td>
+                        <td>${b.client  || '-'}</td>
+                        <td>${b.project || '-'}</td>
+                        <td>${b.name}</td>
+                        <td>${b.checklist
+                            ? `<a href="${b.checklist}" target="_blank" class="link-btn">View Link</a>`
+                            : '-'}</td>
+                    </tr>`).join('')}
+            </tbody>
+        </table>`;
 }
 
-function openModal(dk, i, l){
+function openModal(dk, i, l) {
     pendingKey = {dk, i, l};
     document.getElementById('modal-sub').textContent = `${l} · ${SLOTS[i].s}`;
-    ['name','email','project','client','remarks','checklist'].forEach(id => document.getElementById('f-'+id).value = '');
+    ['name','email','project','client','remarks','checklist'].forEach(id =>
+        document.getElementById('f-' + id).value = '');
     document.getElementById('modal-overlay').classList.add('open');
 }
 
-function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+}
 
-async function confirmBooking(){
+async function confirmBooking() {
     const data = {
-        name: document.getElementById('f-name').value,
-        email: document.getElementById('f-email').value,
-        project: document.getElementById('f-project').value,
-        client: document.getElementById('f-client').value,
-        remarks: document.getElementById('f-remarks').value,
+        name     : document.getElementById('f-name').value,
+        email    : document.getElementById('f-email').value,
+        project  : document.getElementById('f-project').value,
+        client   : document.getElementById('f-client').value,
+        remarks  : document.getElementById('f-remarks').value,
         checklist: document.getElementById('f-checklist').value
     };
-    if(!data.name || !data.email) return alert("Please fill Name and Email.");
+    if (!data.name || !data.email) return alert("Please fill Name and Email.");
 
     const {tue, thu} = getWeekDays(weekOffset);
-    const payload = { 
-        action: 'book', slotKey: skey(pendingKey.dk, pendingKey.i),
-        day: pendingKey.l, date: fmtDate(pendingKey.dk === 'tue' ? tue : thu),
-        time: `${SLOTS[pendingKey.i].s} - ${SLOTS[pendingKey.i].e}`, ...data 
+    const payload = {
+        action   : 'book',
+        slotKey  : skey(pendingKey.dk, pendingKey.i),
+        day      : pendingKey.l,
+        date     : fmtDate(pendingKey.dk === 'tue' ? tue : thu),
+        time     : `${SLOTS[pendingKey.i].s} - ${SLOTS[pendingKey.i].e}`,
+        ...data
     };
 
-    const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const res    = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)});
     const result = await res.json();
-    if(result.success) { 
-        fetchLive(); // Refresh all data from sheet
-        closeModal(); 
+    if (result.success) {
+        fetchLive();
+        closeModal();
     }
 }
 
-async function handleCancel(dk, i){
+async function handleCancel(dk, i) {
     const k = skey(dk, i);
-    if(!confirm("Cancel this booking?")) return;
-    const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action:'cancel', slotKey:k}) });
+    if (!confirm("Cancel this booking?")) return;
+    const res    = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({action:'cancel', slotKey:k})});
     const result = await res.json();
-    if(result.success) { fetchLive(); }
+    if (result.success) { fetchLive(); }
 }
 
-function shiftWeek(d){ weekOffset += d; render(); }
+function shiftWeek(d) { weekOffset += d; render(); }
+
 fetchLive();
 </script>
 </body>

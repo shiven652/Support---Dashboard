@@ -8,8 +8,7 @@
         *{box-sizing:border-box;margin:0;padding:0;}
         .portal{background:#f2f1ef;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
         .topbar{background:#111;padding:0 28px;height:60px;display:flex;align-items:center;}
-        /* FIXED LOGO */
-        .logo-img {height: 30px; width: auto; margin-right: 20px; filter: brightness(0) invert(1);}
+        .logo-img {height: 25px; width: auto; margin-right: 20px;}
         .topbar-brand{color:#fff;font-size:13px;font-weight:600;margin-right:20px;border-right:1px solid #333;padding-right:20px;}
         .topbar-sub{color:#777;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;}
         .main{padding:32px 28px 60px; max-width: 1200px; margin: 0 auto;}
@@ -29,30 +28,29 @@
         .avail-label{padding:6px 10px;font-size:10px;font-weight:600;color:#1e9e6e;text-transform:uppercase;}
         .avail-plus{padding:6px 9px;background:#1e9e6e;color:#fff;font-size:14px;}
         .booked-badge{padding:6px 12px;font-size:10px;font-weight:700;background:#cc1f2d;color:#fff;text-transform:uppercase;}
-        .closed-badge{padding:6px 12px;font-size:10px;font-weight:700;background:#eee;color:#999;text-transform:uppercase;border:1px solid #ddd;}
+        .closed-badge{padding:6px 12px;font-size:10px;font-weight:700;background:#eee;color:#999;text-transform:uppercase;}
         .cancel-btn{padding:6px 10px;font-size:10px;font-weight:600;background:#fff;color:#888;border:1px solid #ccc;cursor:pointer;text-transform:uppercase;}
-        /* Modal Styles */
         .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;align-items:center;justify-content:center;}
         .modal-overlay.open{display:flex;}
         .modal{background:#fff;width:100%;max-width:420px;box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);}
         .modal-header{background:#111;color:#fff;padding:18px 22px;display:flex;justify-content:space-between;}
-        .modal-body{padding:22px; max-height: 70vh; overflow-y: auto;}
+        .modal-body{padding:22px;}
         .field{margin-bottom:15px;}
-        .field label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;color:#888;margin-bottom:6px;}
+        .field label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;color:#888;margin-bottom:4px;}
         .field input{width:100%;border:1px solid #ddd;padding:9px 12px;font-size:13px;outline:none;}
         .modal-footer{padding:0 22px 22px;display:flex;gap:10px;}
         .confirm-btn{flex:1;padding:12px;background:#111;color:#fff;border:none;font-size:12px;font-weight:600;text-transform:uppercase;cursor:pointer;}
         .bookings-table{width:100%;border-collapse:collapse;font-size:11px;background:#fff;border:1px solid #ddd;}
         .bookings-table th{background:#111;color:#fff;padding:12px;text-align:left;text-transform:uppercase;font-size:9px;}
         .bookings-table td{padding:10px 12px;border-bottom:1px solid #f2f2f2;}
-        .link-text{color: #1e9e6e; text-decoration: none; font-weight: 600;}
+        .link-btn {color: #cc1f2d; text-decoration: none; font-weight: bold;}
     </style>
 </head>
 <body>
 
 <div class="portal">
     <div class="topbar">
-        <img src="https://www.kapture.ai/wp-content/uploads/2023/10/Kapture-Logo.png" alt="Kapture Logo" class="logo-img">
+        <img src="https://testrigor.com/wp-content/uploads/2023/12/kapture-cx.svg" alt="Logo" class="logo-img">
         <span class="topbar-brand">Kapture CX</span>
         <span class="topbar-sub">Client Transition Portal</span>
     </div>
@@ -63,11 +61,10 @@
         </div>
         <div class="controls">
             <button class="nav-btn" onclick="shiftWeek(-1)">← Prev</button>
-            <div class="week-chip" id="week-chip">WEEK OF LOADING...</div>
+            <div class="week-chip" id="week-chip">LOADING...</div>
             <button class="nav-btn" onclick="shiftWeek(1)">Next →</button>
         </div>
         <div class="days-grid" id="days-grid"></div>
-        
         <div style="font-size:13px;font-weight:600;margin-bottom:10px;text-transform:uppercase;color:#444;">Upcoming Booking Details</div>
         <div id="bookings-wrap"></div>
     </div>
@@ -87,25 +84,26 @@
             <div class="field"><label>Email Address</label><input type="email" id="f-email"></div>
             <div class="field"><label>Project Name</label><input type="text" id="f-project"></div>
             <div class="field"><label>Client Name</label><input type="text" id="f-client"></div>
-            <div class="field"><label>Handover Checklist (Link)</label><input type="url" id="f-checklist" placeholder="https://docs.google.com/..."></div>
-            <div class="field"><label>Remarks</label><input type="text" id="f-remarks" placeholder="Optional notes..."></div>
+            <div class="field"><label>Handover Checklist (Link)</label><input type="text" id="f-checklist" placeholder="Paste link here..."></div>
+            <div class="field"><label>Remarks</label><input type="text" id="f-remarks"></div>
         </div>
         <div class="modal-footer">
-            <button class="confirm-btn" id="confirm-btn" onclick="confirmBooking()">Confirm Booking →</button>
+            <button class="confirm-btn" onclick="confirmBooking()">Confirm Booking →</button>
         </div>
     </div>
 </div>
 
 <script>
-// UPDATE WITH YOUR SCRIPT URL
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbznvWWOeQldh7T7tCdTZzz7PKfpfQhVsNoHurdNRl2raNwAT7H2BwUEefa9_DWwrdtU/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcM8VXSILNLlMm-uPkhMZ2GwpBf2CopLFdfjR-5eMcnITdXCId1maWJdV1rPgF9Goc/exec"; // PASTE YOUR WEB APP URL HERE
 
 const SLOTS = [{s:'1:00 PM', e:'1:30 PM'}, {s:'1:30 PM', e:'2:00 PM'}];
 let weekOffset = 0, bookings = {}, pendingKey = null;
 
 function getWeekDays(o){
-    const base = new Date(); // Start from current date
-    const mon = new Date(base); mon.setDate(base.getDate() - (base.getDay()-1) + o * 7);
+    const now = new Date();
+    const dayOfWeek = now.getDay(); 
+    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) + (o * 7);
+    const mon = new Date(now.setDate(diff));
     const tue = new Date(mon); tue.setDate(mon.getDate() + 1);
     const thu = new Date(mon); thu.setDate(mon.getDate() + 3);
     return {tue, thu, mon};
@@ -119,95 +117,47 @@ async function fetchLive(){
         const r = await fetch(`${SCRIPT_URL}?action=fetch&t=${Date.now()}`);
         const d = await r.json();
         if (d.success) { bookings = d.bookings; render(); }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); render(); }
 }
 
 function render(){
     const {tue, thu, mon} = getWeekDays(weekOffset);
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
+    const today = new Date(); today.setHours(0,0,0,0);
+    
     document.getElementById('week-chip').textContent = 'WEEK OF ' + mon.toLocaleDateString('en-GB',{day:'numeric',month:'short'}).toUpperCase();
     const grid = document.getElementById('days-grid'); grid.innerHTML = '';
 
     [{l:'Tuesday', d:tue, dk:'tue'}, {l:'Thursday', d:thu, dk:'thu'}].forEach(day => {
         const isPast = day.d < today;
-        
         let slotsHtml = SLOTS.map((s, i) => {
             const k = skey(day.dk, i);
             const b = bookings[k];
-            
-            if(b) {
-                return `<div class="slot-row">
-                    <div style="font-size:13px;">${s.s} – ${s.e}</div>
-                    <div style="display:flex;gap:8px;"><div class="booked-badge">Booked</div><button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button></div>
-                </div>`;
-            } else if (isPast) {
-                return `<div class="slot-row">
-                    <div style="font-size:13px; color:#999;">${s.s} – ${s.e}</div>
-                    <div class="closed-badge">Closed</div>
-                </div>`;
-            } else {
-                return `<div class="slot-row">
-                    <div style="font-size:13px;">${s.s} – ${s.e}</div>
-                    <button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')"><span class="avail-label">Available</span><span class="avail-plus">+</span></button>
-                </div>`;
-            }
+            if(b) return `<div class="slot-row"><span>${s.s} – ${s.e}</span><div style="display:flex;gap:8px;"><div class="booked-badge">Booked</div><button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button></div></div>`;
+            if(isPast) return `<div class="slot-row" style="opacity:0.6;"><span>${s.s} – ${s.e}</span><div class="closed-badge">Closed</div></div>`;
+            return `<div class="slot-row"><span>${s.s} – ${s.e}</span><button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')"><span class="avail-label">Available</span><span class="avail-plus">+</span></button></div>`;
         }).join('');
-        
-        grid.innerHTML += `<div class="day-card"><div class="day-header"><div>${day.l}<br><small style="color:#aaa;font-size:10px;">${fmtDate(day.d)}</small></div><div class="dur-badge">30 MIN</div></div><div>${slotsHtml}</div></div>`;
+        grid.innerHTML += `<div class="day-card"><div class="day-header"><div>${day.l}<br><small style="color:#aaa;font-size:10px;">${fmtDate(day.d)}</small></div></div><div>${slotsHtml}</div></div>`;
     });
     renderTable();
 }
 
 function renderTable(){
     const wrap = document.getElementById('bookings-wrap');
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
-    // Convert bookings object to array, filter for upcoming, and sort
-    const upcoming = Object.values(bookings)
+    const today = new Date(); today.setHours(0,0,0,0);
+    const all = Object.values(bookings)
         .map(b => {
-            // Parse "DD MMM YYYY" back to Date object for logic
             const parts = b.date.split(' ');
-            const dateObj = new Date(`${parts[1]} ${parts[0]}, ${parts[2]}`);
-            return {...b, dateObj};
+            b.sortDate = new Date(`${parts[1]} ${parts[0]}, ${parts[2]}`);
+            return b;
         })
-        .filter(b => b.dateObj >= today) // REQUIREMENT 4: Only upcoming
-        .sort((a, b) => a.dateObj - b.dateObj); // REQUIREMENT 4: Ascending sort
+        .filter(b => b.sortDate >= today)
+        .sort((a,b) => a.sortDate - b.sortDate);
 
-    if(!upcoming.length){ 
-        wrap.innerHTML = '<div style="background:#fff;padding:20px;text-align:center;color:#aaa;">No upcoming bookings.</div>'; 
-        return; 
-    }
+    if(!all.length){ wrap.innerHTML = '<div style="background:#fff;padding:20px;text-align:center;color:#aaa;font-size:12px;">No upcoming bookings found.</div>'; return; }
 
-    wrap.innerHTML = `
-        <table class="bookings-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Slot</th>
-                    <th>Client</th>
-                    <th>Project</th> 
-                    <th>Name</th>
-                    <th>Checklist</th>
-                    <th>Remarks</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${upcoming.map(b => `
-                    <tr>
-                        <td style="font-weight:600;">${b.date}</td>
-                        <td>${b.time}</td>
-                        <td>${b.client}</td>
-                        <td>${b.project || '-'}</td> 
-                        <td>${b.name}</td>
-                        <td>${b.checklist ? `<a href="${b.checklist}" target="_blank" class="link-text">View Link</a>` : '-'}</td>
-                        <td>${b.remarks || '-'}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>`;
+    wrap.innerHTML = `<table class="bookings-table"><thead><tr><th>Date</th><th>Slot</th><th>Client</th><th>Project</th><th>Name</th><th>Checklist</th></tr></thead><tbody>
+        ${all.map(b => `<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client}</td><td>${b.project}</td><td>${b.name}</td><td>${b.checklist ? `<a href="${b.checklist}" target="_blank" class="link-btn">View Link</a>` : '-'}</td></tr>`).join('')}
+    </tbody></table>`;
 }
 
 function openModal(dk, i, l){
@@ -225,10 +175,10 @@ async function confirmBooking(){
         email: document.getElementById('f-email').value,
         project: document.getElementById('f-project').value,
         client: document.getElementById('f-client').value,
-        checklist: document.getElementById('f-checklist').value,
-        remarks: document.getElementById('f-remarks').value
+        remarks: document.getElementById('f-remarks').value,
+        checklist: document.getElementById('f-checklist').value
     };
-    if(!data.name || !data.email) return alert("Fill required fields");
+    if(!data.name || !data.email || !data.checklist) return alert("Please fill Name, Email, and Checklist link.");
 
     const {tue, thu} = getWeekDays(weekOffset);
     const payload = { 
@@ -239,11 +189,7 @@ async function confirmBooking(){
 
     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
     const result = await res.json();
-    if(result.success) { 
-        bookings[payload.slotKey] = {...payload, status:'booked'}; 
-        closeModal(); 
-        render(); 
-    }
+    if(result.success) { bookings[payload.slotKey] = {...payload}; closeModal(); render(); }
 }
 
 async function handleCancel(dk, i){

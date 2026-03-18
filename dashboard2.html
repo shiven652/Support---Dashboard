@@ -94,7 +94,8 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcM8VXSILNLlMm-uPkhMZ2GwpBf2CopLFdfjR-5eMcnITdXCId1maWJdV1rPgF9Goc/exec"; // PASTE YOUR WEB APP URL HERE
+// REPLACE WITH YOUR URL
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbznvWWOeQldh7T7tCdTZzz7PKfpfQhVsNoHurdNRl2raNwAT7H2BwUEefa9_DWwrdtU/exec"; 
 
 const SLOTS = [{s:'1:00 PM', e:'1:30 PM'}, {s:'1:30 PM', e:'2:00 PM'}];
 let weekOffset = 0, bookings = {}, pendingKey = null;
@@ -116,7 +117,10 @@ async function fetchLive(){
     try {
         const r = await fetch(`${SCRIPT_URL}?action=fetch&t=${Date.now()}`);
         const d = await r.json();
-        if (d.success) { bookings = d.bookings; render(); }
+        if (d.success) { 
+            bookings = d.bookings; 
+            render(); 
+        }
     } catch (e) { console.error(e); render(); }
 }
 
@@ -132,7 +136,12 @@ function render(){
         let slotsHtml = SLOTS.map((s, i) => {
             const k = skey(day.dk, i);
             const b = bookings[k];
-            if(b) return `<div class="slot-row"><span>${s.s} – ${s.e}</span><div style="display:flex;gap:8px;"><div class="booked-badge">Booked</div><button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button></div></div>`;
+            
+            if(b) {
+                // MODIFIED: Only show Cancel button if it's NOT a past date
+                const cancelBtn = !isPast ? `<button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button>` : '';
+                return `<div class="slot-row"><span>${s.s} – ${s.e}</span><div style="display:flex;gap:8px;"><div class="booked-badge">Booked</div>${cancelBtn}</div></div>`;
+            }
             if(isPast) return `<div class="slot-row" style="opacity:0.6;"><span>${s.s} – ${s.e}</span><div class="closed-badge">Closed</div></div>`;
             return `<div class="slot-row"><span>${s.s} – ${s.e}</span><button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')"><span class="avail-label">Available</span><span class="avail-plus">+</span></button></div>`;
         }).join('');
@@ -144,10 +153,14 @@ function render(){
 function renderTable(){
     const wrap = document.getElementById('bookings-wrap');
     const today = new Date(); today.setHours(0,0,0,0);
+    
+    // MODIFIED: Robust date parsing for the table
     const all = Object.values(bookings)
         .map(b => {
-            const parts = b.date.split(' ');
-            b.sortDate = new Date(`${parts[1]} ${parts[0]}, ${parts[2]}`);
+            const dStr = b.date; // E.g., "17 MAR 2026"
+            const p = dStr.split(' ');
+            const monthMap = {"JAN":0,"FEB":1,"MAR":2,"APR":3,"MAY":4,"JUN":5,"JUL":6,"AUG":7,"SEP":8,"OCT":9,"NOV":10,"DEC":11};
+            b.sortDate = new Date(parseInt(p[2]), monthMap[p[1]], parseInt(p[0]));
             return b;
         })
         .filter(b => b.sortDate >= today)
@@ -156,7 +169,7 @@ function renderTable(){
     if(!all.length){ wrap.innerHTML = '<div style="background:#fff;padding:20px;text-align:center;color:#aaa;font-size:12px;">No upcoming bookings found.</div>'; return; }
 
     wrap.innerHTML = `<table class="bookings-table"><thead><tr><th>Date</th><th>Slot</th><th>Client</th><th>Project</th><th>Name</th><th>Checklist</th></tr></thead><tbody>
-        ${all.map(b => `<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client}</td><td>${b.project}</td><td>${b.name}</td><td>${b.checklist ? `<a href="${b.checklist}" target="_blank" class="link-btn">View Link</a>` : '-'}</td></tr>`).join('')}
+        ${all.map(b => `<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client}</td><td>${b.project || '-'}</td><td>${b.name}</td><td>${b.checklist ? `<a href="${b.checklist}" target="_blank" class="link-btn">View Link</a>` : '-'}</td></tr>`).join('')}
     </tbody></table>`;
 }
 
@@ -178,7 +191,7 @@ async function confirmBooking(){
         remarks: document.getElementById('f-remarks').value,
         checklist: document.getElementById('f-checklist').value
     };
-    if(!data.name || !data.email || !data.checklist) return alert("Please fill Name, Email, and Checklist link.");
+    if(!data.name || !data.email) return alert("Please fill Name and Email.");
 
     const {tue, thu} = getWeekDays(weekOffset);
     const payload = { 
@@ -189,14 +202,18 @@ async function confirmBooking(){
 
     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
     const result = await res.json();
-    if(result.success) { bookings[payload.slotKey] = {...payload}; closeModal(); render(); }
+    if(result.success) { 
+        fetchLive(); // Refresh all data from sheet
+        closeModal(); 
+    }
 }
 
 async function handleCancel(dk, i){
     const k = skey(dk, i);
     if(!confirm("Cancel this booking?")) return;
     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action:'cancel', slotKey:k}) });
-    if((await res.json()).success) { delete bookings[k]; render(); }
+    const result = await res.json();
+    if(result.success) { fetchLive(); }
 }
 
 function shiftWeek(d){ weekOffset += d; render(); }

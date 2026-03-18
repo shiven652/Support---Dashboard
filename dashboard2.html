@@ -8,7 +8,8 @@
         *{box-sizing:border-box;margin:0;padding:0;}
         .portal{background:#f2f1ef;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
         .topbar{background:#111;padding:0 28px;height:60px;display:flex;align-items:center;}
-        .logo-img {height: 30px; width: auto; margin-right: 20px;}
+        /* FIXED LOGO */
+        .logo-img {height: 30px; width: auto; margin-right: 20px; filter: brightness(0) invert(1);}
         .topbar-brand{color:#fff;font-size:13px;font-weight:600;margin-right:20px;border-right:1px solid #333;padding-right:20px;}
         .topbar-sub{color:#777;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;}
         .main{padding:32px 28px 60px; max-width: 1200px; margin: 0 auto;}
@@ -28,30 +29,30 @@
         .avail-label{padding:6px 10px;font-size:10px;font-weight:600;color:#1e9e6e;text-transform:uppercase;}
         .avail-plus{padding:6px 9px;background:#1e9e6e;color:#fff;font-size:14px;}
         .booked-badge{padding:6px 12px;font-size:10px;font-weight:700;background:#cc1f2d;color:#fff;text-transform:uppercase;}
+        .closed-badge{padding:6px 12px;font-size:10px;font-weight:700;background:#eee;color:#999;text-transform:uppercase;border:1px solid #ddd;}
         .cancel-btn{padding:6px 10px;font-size:10px;font-weight:600;background:#fff;color:#888;border:1px solid #ccc;cursor:pointer;text-transform:uppercase;}
         /* Modal Styles */
         .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;align-items:center;justify-content:center;}
         .modal-overlay.open{display:flex;}
         .modal{background:#fff;width:100%;max-width:420px;box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);}
         .modal-header{background:#111;color:#fff;padding:18px 22px;display:flex;justify-content:space-between;}
-        .modal-body{padding:22px;}
+        .modal-body{padding:22px; max-height: 70vh; overflow-y: auto;}
         .field{margin-bottom:15px;}
         .field label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;color:#888;margin-bottom:6px;}
         .field input{width:100%;border:1px solid #ddd;padding:9px 12px;font-size:13px;outline:none;}
         .modal-footer{padding:0 22px 22px;display:flex;gap:10px;}
         .confirm-btn{flex:1;padding:12px;background:#111;color:#fff;border:none;font-size:12px;font-weight:600;text-transform:uppercase;cursor:pointer;}
-        .toast{position:fixed;bottom:24px;right:24px;padding:12px 18px;font-size:12px;z-index:200;opacity:0;transition:0.3s;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);border-left:3px solid #1e9e6e;}
-        .toast.show{opacity:1;}
-        .bookings-table{width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #ddd;}
-        .bookings-table th{background:#111;color:#fff;padding:12px;text-align:left;text-transform:uppercase;font-size:10px;}
-        .bookings-table td{padding:12px;border-bottom:1px solid #f2f2f2;}
+        .bookings-table{width:100%;border-collapse:collapse;font-size:11px;background:#fff;border:1px solid #ddd;}
+        .bookings-table th{background:#111;color:#fff;padding:12px;text-align:left;text-transform:uppercase;font-size:9px;}
+        .bookings-table td{padding:10px 12px;border-bottom:1px solid #f2f2f2;}
+        .link-text{color: #1e9e6e; text-decoration: none; font-weight: 600;}
     </style>
 </head>
 <body>
 
 <div class="portal">
     <div class="topbar">
-        <img src="url(data:image/png;base64,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)" alt="Kapture Logo" class="logo-img" crossorigin="anonymous">
+        <img src="https://www.kapture.ai/wp-content/uploads/2023/10/Kapture-Logo.png" alt="Kapture Logo" class="logo-img">
         <span class="topbar-brand">Kapture CX</span>
         <span class="topbar-sub">Client Transition Portal</span>
     </div>
@@ -66,7 +67,8 @@
             <button class="nav-btn" onclick="shiftWeek(1)">Next →</button>
         </div>
         <div class="days-grid" id="days-grid"></div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:10px;text-transform:uppercase;color:#444;">Live Booking Details</div>
+        
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;text-transform:uppercase;color:#444;">Upcoming Booking Details</div>
         <div id="bookings-wrap"></div>
     </div>
 </div>
@@ -85,6 +87,7 @@
             <div class="field"><label>Email Address</label><input type="email" id="f-email"></div>
             <div class="field"><label>Project Name</label><input type="text" id="f-project"></div>
             <div class="field"><label>Client Name</label><input type="text" id="f-client"></div>
+            <div class="field"><label>Handover Checklist (Link)</label><input type="url" id="f-checklist" placeholder="https://docs.google.com/..."></div>
             <div class="field"><label>Remarks</label><input type="text" id="f-remarks" placeholder="Optional notes..."></div>
         </div>
         <div class="modal-footer">
@@ -93,16 +96,15 @@
     </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
 <script>
+// UPDATE WITH YOUR SCRIPT URL
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbznvWWOeQldh7T7tCdTZzz7PKfpfQhVsNoHurdNRl2raNwAT7H2BwUEefa9_DWwrdtU/exec"; 
 
 const SLOTS = [{s:'1:00 PM', e:'1:30 PM'}, {s:'1:30 PM', e:'2:00 PM'}];
 let weekOffset = 0, bookings = {}, pendingKey = null;
 
 function getWeekDays(o){
-    const base = new Date(2026, 2, 17);
+    const base = new Date(); // Start from current date
     const mon = new Date(base); mon.setDate(base.getDate() - (base.getDay()-1) + o * 7);
     const tue = new Date(mon); tue.setDate(mon.getDate() + 1);
     const thu = new Date(mon); thu.setDate(mon.getDate() + 3);
@@ -122,19 +124,37 @@ async function fetchLive(){
 
 function render(){
     const {tue, thu, mon} = getWeekDays(weekOffset);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
     document.getElementById('week-chip').textContent = 'WEEK OF ' + mon.toLocaleDateString('en-GB',{day:'numeric',month:'short'}).toUpperCase();
     const grid = document.getElementById('days-grid'); grid.innerHTML = '';
 
     [{l:'Tuesday', d:tue, dk:'tue'}, {l:'Thursday', d:thu, dk:'thu'}].forEach(day => {
+        const isPast = day.d < today;
+        
         let slotsHtml = SLOTS.map((s, i) => {
             const k = skey(day.dk, i);
             const b = bookings[k];
-            return `<div class="slot-row">
-                <div style="font-size:13px;">${s.s} – ${s.e}</div>
-                ${b ? `<div style="display:flex;gap:8px;"><div class="booked-badge">Booked</div><button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button></div>` 
-                    : `<button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')"><span class="avail-label">Available</span><span class="avail-plus">+</span></button>`}
-            </div>`;
+            
+            if(b) {
+                return `<div class="slot-row">
+                    <div style="font-size:13px;">${s.s} – ${s.e}</div>
+                    <div style="display:flex;gap:8px;"><div class="booked-badge">Booked</div><button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button></div>
+                </div>`;
+            } else if (isPast) {
+                return `<div class="slot-row">
+                    <div style="font-size:13px; color:#999;">${s.s} – ${s.e}</div>
+                    <div class="closed-badge">Closed</div>
+                </div>`;
+            } else {
+                return `<div class="slot-row">
+                    <div style="font-size:13px;">${s.s} – ${s.e}</div>
+                    <button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')"><span class="avail-label">Available</span><span class="avail-plus">+</span></button>
+                </div>`;
+            }
         }).join('');
+        
         grid.innerHTML += `<div class="day-card"><div class="day-header"><div>${day.l}<br><small style="color:#aaa;font-size:10px;">${fmtDate(day.d)}</small></div><div class="dur-badge">30 MIN</div></div><div>${slotsHtml}</div></div>`;
     });
     renderTable();
@@ -142,52 +162,58 @@ function render(){
 
 function renderTable(){
     const wrap = document.getElementById('bookings-wrap');
-    const all = Object.values(bookings);
-    
-    if(!all.length){ 
-        wrap.innerHTML = '<div style="background:#fff;padding:20px;text-align:center;color:#aaa;">No bookings yet.</div>'; 
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    // Convert bookings object to array, filter for upcoming, and sort
+    const upcoming = Object.values(bookings)
+        .map(b => {
+            // Parse "DD MMM YYYY" back to Date object for logic
+            const parts = b.date.split(' ');
+            const dateObj = new Date(`${parts[1]} ${parts[0]}, ${parts[2]}`);
+            return {...b, dateObj};
+        })
+        .filter(b => b.dateObj >= today) // REQUIREMENT 4: Only upcoming
+        .sort((a, b) => a.dateObj - b.dateObj); // REQUIREMENT 4: Ascending sort
+
+    if(!upcoming.length){ 
+        wrap.innerHTML = '<div style="background:#fff;padding:20px;text-align:center;color:#aaa;">No upcoming bookings.</div>'; 
         return; 
     }
-
-    // Helper to fix the date formatting
-    const formatDate = (dateStr) => {
-        try {
-            const d = new Date(dateStr);
-            // Returns formatted as: 17 MAR 2026
-            return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase();
-        } catch(e) {
-            return dateStr; // Fallback to raw string if error
-        }
-    };
 
     wrap.innerHTML = `
         <table class="bookings-table">
             <thead>
                 <tr>
-                    <th>Booking Date</th>
+                    <th>Date</th>
                     <th>Slot</th>
                     <th>Client</th>
-                    <th>Project</th> <th>Name</th>
+                    <th>Project</th> 
+                    <th>Name</th>
+                    <th>Checklist</th>
                     <th>Remarks</th>
                 </tr>
             </thead>
             <tbody>
-                ${all.map(b => `
+                ${upcoming.map(b => `
                     <tr>
-                        <td>${formatDate(b.date)}</td>
+                        <td style="font-weight:600;">${b.date}</td>
                         <td>${b.time}</td>
                         <td>${b.client}</td>
-                        <td>${b.project || '-'}</td> <td>${b.name}</td>
+                        <td>${b.project || '-'}</td> 
+                        <td>${b.name}</td>
+                        <td>${b.checklist ? `<a href="${b.checklist}" target="_blank" class="link-text">View Link</a>` : '-'}</td>
                         <td>${b.remarks || '-'}</td>
                     </tr>
                 `).join('')}
             </tbody>
         </table>`;
 }
+
 function openModal(dk, i, l){
     pendingKey = {dk, i, l};
     document.getElementById('modal-sub').textContent = `${l} · ${SLOTS[i].s}`;
-    ['name','email','project','client','remarks'].forEach(id => document.getElementById('f-'+id).value = '');
+    ['name','email','project','client','remarks','checklist'].forEach(id => document.getElementById('f-'+id).value = '');
     document.getElementById('modal-overlay').classList.add('open');
 }
 
@@ -199,6 +225,7 @@ async function confirmBooking(){
         email: document.getElementById('f-email').value,
         project: document.getElementById('f-project').value,
         client: document.getElementById('f-client').value,
+        checklist: document.getElementById('f-checklist').value,
         remarks: document.getElementById('f-remarks').value
     };
     if(!data.name || !data.email) return alert("Fill required fields");
@@ -212,7 +239,11 @@ async function confirmBooking(){
 
     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
     const result = await res.json();
-    if(result.success) { bookings[payload.slotKey] = {...payload, status:'booked'}; closeModal(); render(); }
+    if(result.success) { 
+        bookings[payload.slotKey] = {...payload, status:'booked'}; 
+        closeModal(); 
+        render(); 
+    }
 }
 
 async function handleCancel(dk, i){

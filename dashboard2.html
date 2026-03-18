@@ -139,6 +139,32 @@ function fmtDate(d) {
 
 function skey(dk, i) { return `w${weekOffset}_${dk}_${i}`; }
 
+/**
+ * Returns true if the slot is still open for booking.
+ * Tuesday  → deadline is previous Thursday (end of day)
+ * Thursday → deadline is Monday of the same week (end of day)
+ * Both use "working days" logic: 2 clear working days before the slot.
+ */
+function isBookingOpen(slotDate, dk) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    let deadline;
+
+    if (dk === 'tue') {
+        // Deadline = Thursday of the PREVIOUS week
+        // slotDate is Tuesday; go back 5 days to get previous Thursday
+        deadline = new Date(slotDate);
+        deadline.setDate(slotDate.getDate() - 5);
+    } else {
+        // dk === 'thu': Deadline = Monday of the SAME week
+        // slotDate is Thursday; go back 3 days to get Monday
+        deadline = new Date(slotDate);
+        deadline.setDate(slotDate.getDate() - 3);
+    }
+    deadline.setHours(0, 0, 0, 0);
+    // Booking is open if today is on or before the deadline
+    return today <= deadline;
+}
+
 async function fetchLive() {
     try {
         const r = await fetch(`${SCRIPT_URL}?action=fetch&t=${Date.now()}`);
@@ -165,13 +191,17 @@ function render() {
     grid.innerHTML = '';
 
     [{l:'Tuesday', d:tue, dk:'tue'}, {l:'Thursday', d:thu, dk:'thu'}].forEach(day => {
-        const isPast = day.d < today;
+        const isPast      = day.d < today;
+        const bookingOpen = isBookingOpen(day.d, day.dk); // false = deadline passed
+
         let slotsHtml = SLOTS.map((s, i) => {
             const k = skey(day.dk, i);
             const b = bookings[k];
 
             if (b) {
-                const cancelBtn = !isPast
+                // Cancel only allowed if slot is in the future AND booking deadline hasn't passed
+                const canCancel = !isPast && bookingOpen;
+                const cancelBtn = canCancel
                     ? `<button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button>`
                     : '';
                 return `<div class="slot-row">
@@ -181,10 +211,12 @@ function render() {
                     </div>
                 </div>`;
             }
-            if (isPast) {
+            // Slot is in the past OR booking deadline has passed → show Closed
+            if (isPast || !bookingOpen) {
+                const label = isPast ? 'Closed' : 'Deadline Passed';
                 return `<div class="slot-row" style="opacity:0.6;">
                     <span>${s.s} – ${s.e}</span>
-                    <div class="closed-badge">Closed</div>
+                    <div class="closed-badge">${label}</div>
                 </div>`;
             }
             return `<div class="slot-row">

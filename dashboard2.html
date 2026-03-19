@@ -302,14 +302,20 @@ function closeModal() {
 
 async function confirmBooking() {
     const data = {
-        name     : document.getElementById('f-name').value,
-        email    : document.getElementById('f-email').value,
-        project  : document.getElementById('f-project').value,
-        client   : document.getElementById('f-client').value,
-        remarks  : document.getElementById('f-remarks').value,
-        checklist: document.getElementById('f-checklist').value
+        name     : document.getElementById('f-name').value.trim(),
+        email    : document.getElementById('f-email').value.trim(),
+        project  : document.getElementById('f-project').value.trim(),
+        client   : document.getElementById('f-client').value.trim(),
+        remarks  : document.getElementById('f-remarks').value.trim(),
+        checklist: document.getElementById('f-checklist').value.trim()
     };
-    if (!data.name || !data.email) return alert("Please fill Name and Email.");
+
+    // Validate all fields except remarks
+    if (!data.name)      return alert("Please fill in the Name of Person.");
+    if (!data.email)     return alert("Please fill in the Email Address.");
+    if (!data.project)   return alert("Please fill in the Project Name.");
+    if (!data.client)    return alert("Please fill in the Client Name.");
+    if (!data.checklist) return alert("Please paste the Handover Checklist link.");
 
     const {tue, thu} = getWeekDays(weekOffset);
     const payload = {

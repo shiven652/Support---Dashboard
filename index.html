@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Interactive Support Dashboard</title>
+<title>Interactive Support Dashboard - Full Edition</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -39,15 +39,10 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
   padding:12px 20px; margin-bottom:20px;
   display:flex; justify-content:space-between; align-items:center;
 }
-.dash-file { font-size:13px; font-weight:600; color:var(--navy2); }
-.dash-meta { font-size:11px; color:var(--slate); margin-top:2px; }
 
 /* KPI STRIP */
 .kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px; }
-.kpi {
-  background:var(--card); border-radius:10px; border:1px solid var(--border);
-  padding:14px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.05);
-}
+.kpi { background:var(--card); border-radius:10px; border:1px solid var(--border); padding:14px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
 .kpi-num { font-size:24px; font-weight:700; font-family:'DM Mono',monospace; line-height:1; }
 .kpi-lbl { font-size:10px; color:var(--slate); margin-top:5px; font-weight:500; text-transform:uppercase; letter-spacing:0.4px; }
 .kpi-sub { font-size:10.5px; margin-top:3px; font-weight:600; }
@@ -56,7 +51,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 #filterBar { background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px 20px; margin-bottom:14px; display:flex; flex-direction:column; gap:10px; }
 .filter-row { display:flex; align-items:center; flex-wrap:wrap; gap:14px; }
 .filter-item { display:flex; align-items:center; gap:8px; transition: opacity 0.3s; }
-select, input[type="date"] { border:1.5px solid var(--border); border-radius:8px; padding:6px 10px; font-size:12px; font-family:'DM Sans',sans-serif; color:var(--text); outline:none; cursor:pointer; }
+select, input[type="date"] { border:1.5px solid var(--border); border-radius:8px; padding:6px 10px; font-size:12px; color:var(--text); outline:none; cursor:pointer; }
 select:disabled, input:disabled { cursor: not-allowed; background: #f8fafc; color: #cbd5e1; }
 
 /* GRID & CARDS */
@@ -66,25 +61,15 @@ select:disabled, input:disabled { cursor: not-allowed; background: #f8fafc; colo
 .g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
 .g32 { display:grid; grid-template-columns:3fr 2fr; gap:14px; }
 .card { background:var(--card); border-radius:10px; border:1px solid var(--border); padding:16px; overflow:hidden; }
-.card-t { font-size:11px; font-weight:700; color:var(--navy2); text-transform:uppercase; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; }
-.badge-sm { font-size:9.5px; background:#e8f5f3; color:var(--teal); padding:2px 8px; border-radius:20px; }
-.h180 { height:180px; } .h200 { height:200px; } .h220 { height:220px; } .h240 { height:240px; } .h260 { height:260px; }
+.card-t { font-size:11px; font-weight:700; color:var(--navy2); text-transform:uppercase; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.h200 { height:200px; } .h240 { height:240px; } .h260 { height:260px; }
 .ins { background:#eef9f7; border-left:3px solid var(--teal); border-radius:6px; padding:7px 11px; font-size:11px; color:var(--navy2); margin-top:10px; font-weight:500; }
-.ins.warn { background:#fffbeb; border-color:var(--amber); color:#78350f; }
 
 /* LOADING */
 #loadingState { text-align:center; padding:60px 20px; }
 .spinner { width:48px; height:48px; border:4px solid #e2e8f0; border-top-color:var(--teal); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 20px; }
 @keyframes spin { to { transform:rotate(360deg); } }
-
-/* BUTTONS */
-.btn-ppt { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); color:#fff; border:none; padding:9px 20px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
-.btn-reset { background:transparent; border:1.5px solid var(--border); color:var(--slate); padding:6px 16px; border-radius:6px; font-size:12px; cursor:pointer; }
-.tag { display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:600; margin:2px; }
-.tg { background:#ccfbf1; color:#0f766e; }
-.ta { background:#fef3c7; color:#78350f; }
-.tr { background:#fee2e2; color:#7f1d1d; }
-.tb { background:#dbeafe; color:#1e40af; }
+.btn-ppt { background: #c0392b; color:#fff; border:none; padding:9px 20px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -96,7 +81,6 @@ select:disabled, input:disabled { cursor: not-allowed; background: #f8fafc; colo
   </div>
   <div class="hdr-right">
     <span class="pill" id="rowCount"></span>
-    <span class="pill" id="lastUpdatedPill"></span>
   </div>
 </div>
 
@@ -108,16 +92,12 @@ select:disabled, input:disabled { cursor: not-allowed; background: #f8fafc; colo
 <div id="dashboard">
   <div class="dash-bar">
     <div>
-      <div class="dash-file" id="fileName">—</div>
-      <div class="dash-meta" id="fileMeta">—</div>
+      <div id="fileName" style="font-weight:700; color:var(--navy2);">📄 Google Sheets Data</div>
+      <div id="dateRangeText" style="font-size:12px; color:var(--slate); font-family:'DM Mono';"></div>
     </div>
-    <div id="dateRangePill" style="background:#eef9f7; border:1px solid #b2e8e2; border-radius:8px; padding:7px 16px; text-align:center;">
-      <div style="font-size:10px; color:var(--slate); font-weight:600;">DATA RANGE</div>
-      <div style="font-size:13px; font-weight:700; color:var(--navy2); font-family:'DM Mono',monospace;" id="dateRangeText">—</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;">
+    <div style="display:flex;gap:8px;">
       <button class="btn-ppt" onclick="generatePPT()">📊 Download PPT</button>
-      <button class="btn-reset" onclick="location.reload()">✕ Reset</button>
+      <button onclick="location.reload()" style="padding:6px 12px; cursor:pointer; border:1px solid var(--border); border-radius:6px; background:#fff;">✕ Reset</button>
     </div>
   </div>
 
@@ -127,21 +107,15 @@ select:disabled, input:disabled { cursor: not-allowed; background: #f8fafc; colo
         <label style="font-size:12px; font-weight:600;">Month:</label>
         <select id="filterMonth" onchange="handleMonthChange()"><option value="">All</option></select>
       </div>
-      <div style="width:1px; height:20px; background:var(--border);"></div>
       <div class="filter-item" id="dateFilterGroup">
         <label style="font-size:12px; font-weight:600;">From:</label>
         <input type="date" id="filterDateFrom" onchange="handleDateChange()">
         <label style="font-size:12px; font-weight:600;">To:</label>
         <input type="date" id="filterDateTo" onchange="handleDateChange()">
       </div>
-      <div style="width:1px; height:20px; background:var(--border);"></div>
       <div class="filter-item">
         <label style="font-size:12px; font-weight:600;">Customer:</label>
         <select id="filterCustomer" onchange="applyFilters()"><option value="">All</option></select>
-      </div>
-      <div class="filter-item">
-        <label style="font-size:12px; font-weight:600;">Team:</label>
-        <select id="filterQueue" onchange="applyFilters()"><option value="">All</option></select>
       </div>
     </div>
   </div>
@@ -151,32 +125,32 @@ select:disabled, input:disabled { cursor: not-allowed; background: #f8fafc; colo
   <div class="sec-title"><div class="sec-dot"></div>Volume Trends & Channel Mix</div>
   <div class="g32">
     <div class="card">
-      <div class="card-t">Weekly Trend — Created vs Resolved <span class="badge-sm" id="weekBadge"></span></div>
+      <div class="card-t">Weekly Trend</div>
       <div class="h260"><canvas id="weeklyChart"></canvas></div>
-      <div class="ins warn" id="weeklyIns"></div>
     </div>
     <div class="card">
       <div class="card-t">Ticket Source / Channel</div>
-      <div class="h180"><canvas id="sourceChart"></canvas></div>
-      <div id="sourceLeg" style="margin-top:10px; font-size:11px;"></div>
+      <div class="h260"><canvas id="sourceChart"></canvas></div>
     </div>
   </div>
 
-  <div class="sec-title"><div class="sec-dot"></div>Monthly Breakdown & SLAs</div>
-  <div class="g2">
+  <div class="sec-title"><div class="sec-dot"></div>Disposition Level 2 Analysis</div>
+  <div class="g3">
     <div class="card">
-      <div class="card-t">Month-on-Month Performance</div>
-      <div class="h220"><canvas id="momChart"></canvas></div>
-      <div id="momTags" style="margin-top:8px;"></div>
+      <div class="card-t">Issue - Top Sub-categories</div>
+      <div class="h240"><canvas id="subCatChart_0"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-t">SLA Compliance</div>
-      <div class="h220"><canvas id="slaChart"></canvas></div>
-      <div id="slaStats" style="display:flex;gap:12px;margin-top:12px;text-align:center;"></div>
+      <div class="card-t">Query - Top Sub-categories</div>
+      <div class="h240"><canvas id="subCatChart_1"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-t">Service Request - Top Sub-categories</div>
+      <div class="h240"><canvas id="subCatChart_2"></canvas></div>
     </div>
   </div>
 
-  <div class="sec-title"><div class="sec-dot"></div>Customer & Category Distribution</div>
+  <div class="sec-title"><div class="sec-dot"></div>Customer & Queue Distribution</div>
   <div class="g2">
     <div class="card">
       <div class="card-t">Top Customers by Volume</div>
@@ -188,11 +162,11 @@ select:disabled, input:disabled { cursor: not-allowed; background: #f8fafc; colo
     </div>
   </div>
 
-  <div class="sec-title"><div class="sec-dot"></div>Quality & Response Analysis</div>
+  <div class="sec-title"><div class="sec-dot"></div>Performance & Quality</div>
   <div class="g3">
     <div class="card">
-      <div class="card-t">Avg FRT by Month (mins)</div>
-      <div class="h200"><canvas id="frtChart"></canvas></div>
+      <div class="card-t">SLA Compliance</div>
+      <div class="h200"><canvas id="slaChart"></canvas></div>
     </div>
     <div class="card">
       <div class="card-t">Reopen Rate Analysis</div>
@@ -203,11 +177,9 @@ select:disabled, input:disabled { cursor: not-allowed; background: #f8fafc; colo
       <div class="h200"><canvas id="sevChart"></canvas></div>
     </div>
   </div>
-
 </div>
 
 <script>
-// GLOBALS
 const COLORS = { navy:'#0f2240', teal:'#00b4a0', amber:'#f59e0b', red:'#ef4444', blue:'#3b82f6', green:'#22c55e', slate:'#94a3b8' };
 const PALETTE = [COLORS.navy, COLORS.teal, COLORS.amber, COLORS.red, COLORS.blue, COLORS.green, COLORS.slate];
 let charts = {};
@@ -215,243 +187,200 @@ let _allRows = [];
 let _colMap = {};
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRxqS2ipBayAmOScFcnlsc1q1TCYn8lL1JXFCOAHsHlwzIAwRKL1wcaGFH2_163EHKQEqePejXUXbN9/pub?gid=49278904&single=true&output=csv';
 
-Chart.defaults.font.family = "'DM Sans', sans-serif";
-
 // ═══════════════════════════════════════════════
-// 1. FILTER LOGIC (MUTUALLY EXCLUSIVE)
+// FILTER LOGIC
 // ═══════════════════════════════════════════════
-
 function handleMonthChange() {
-  const mVal = document.getElementById('filterMonth').value;
-  const dFrom = document.getElementById('filterDateFrom');
-  const dTo = document.getElementById('filterDateTo');
-  if (mVal) {
-    dFrom.value = ""; dTo.value = ""; dFrom.disabled = true; dTo.disabled = true;
-    document.getElementById('dateFilterGroup').style.opacity = "0.3";
-  } else {
-    dFrom.disabled = false; dTo.disabled = false;
-    document.getElementById('dateFilterGroup').style.opacity = "1";
-  }
-  applyFilters();
+    const m = document.getElementById('filterMonth').value;
+    const dF = document.getElementById('filterDateFrom');
+    const dT = document.getElementById('filterDateTo');
+    if (m) { dF.value = ""; dT.value = ""; dF.disabled = dT.disabled = true; document.getElementById('dateFilterGroup').style.opacity = "0.3"; }
+    else { dF.disabled = dT.disabled = false; document.getElementById('dateFilterGroup').style.opacity = "1"; }
+    applyFilters();
 }
-
 function handleDateChange() {
-  const fVal = document.getElementById('filterDateFrom').value;
-  const tVal = document.getElementById('filterDateTo').value;
-  const mSel = document.getElementById('filterMonth');
-  if (fVal || tVal) {
-    mSel.value = ""; mSel.disabled = true;
-    document.getElementById('monthFilterGroup').style.opacity = "0.3";
-  } else {
-    mSel.disabled = false;
-    document.getElementById('monthFilterGroup').style.opacity = "1";
-  }
-  applyFilters();
+    const dF = document.getElementById('filterDateFrom').value;
+    const dT = document.getElementById('filterDateTo').value;
+    const mS = document.getElementById('filterMonth');
+    if (dF || dT) { mS.value = ""; mS.disabled = true; document.getElementById('monthFilterGroup').style.opacity = "0.3"; }
+    else { mS.disabled = false; document.getElementById('monthFilterGroup').style.opacity = "1"; }
+    applyFilters();
 }
 
 // ═══════════════════════════════════════════════
-// 2. UNIVERSAL DRILL-DOWN & CHART BUILDER
+// DRILL DOWN & CHARTS
 // ═══════════════════════════════════════════════
-
 function handleChartClick(event, elements, chart) {
-  if (elements.length <= 0) return;
-  const idx = elements[0].index;
-  const label = chart.data.labels[idx];
-  const id = chart.canvas.id;
+    if (elements.length <= 0) return;
+    const idx = elements[0].index;
+    const label = chart.data.labels[idx];
+    const id = chart.canvas.id;
 
-  let filterCol = null;
-  if (id === 'sourceChart') filterCol = _colMap.source;
-  else if (id === 'queueChart') filterCol = _colMap.queue;
-  else if (id === 'weeklyChart') filterCol = _colMap.createWeek;
-  else if (id === 'momChart') filterCol = _colMap.month;
-  else if (id === 'customerChart') filterCol = _colMap.customer;
-  else if (id === 'sevChart') filterCol = _colMap.severity;
-  else if (id === 'frtChart') filterCol = _colMap.month;
-  else if (id === 'reopenChart') filterCol = _colMap.reopen;
+    let col = null;
+    if (id === 'sourceChart') col = _colMap.source;
+    else if (id === 'queueChart') col = _colMap.queue;
+    else if (id === 'weeklyChart') col = _colMap.createWeek;
+    else if (id === 'customerChart') col = _colMap.customer;
+    else if (id.includes('subCat')) col = _colMap.dispL3;
 
-  const data = _allRows.filter(r => (r[filterCol]||'').toString().trim() === label);
-  openRawDataWindow(data, label);
+    const data = _allRows.filter(r => (r[col]||'').toString().trim() === label);
+    openRawDataWindow(data, label);
 }
 
 function openRawDataWindow(data, title) {
-  const win = window.open('', '_blank');
-  const headers = Object.keys(data[0] || {});
-  const csv = [headers.join(','), ...data.map(r => headers.map(h => `"${r[h]||''}"`).join(','))].join('\n');
-
-  win.document.write(`
-    <html><head><title>Drill Down: ${title}</title>
-    <style>
-      body { font-family: 'DM Sans', sans-serif; padding: 20px; background:#f4f7f9; }
-      .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
-      .btn { background:#22c55e; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold; }
-      table { border-collapse:collapse; width:100%; background:white; font-size:11px; }
-      th { background:#0f2240; color:white; padding:10px; text-align:left; position:sticky; top:0; }
-      td { border:1px solid #eee; padding:8px; white-space:nowrap; }
-      tr:nth-child(even) { background:#fafafa; }
-    </style></head>
-    <body>
-      <div class="top"><h2>Tickets for: ${title} (${data.length})</h2><button class="btn" onclick="dl()">Download CSV</button></div>
-      <table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-      <tbody>${data.map(r=>`<tr>${headers.map(h=>`<td>${r[h]||''}</td>`).join('')}</tr>`).join('')}</tbody></table>
-      <script>function dl(){
-        const blob=new Blob([\`${csv.replace(/`/g, '\\`')}\`], {type:'text/csv'});
-        const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-        a.download='Export_${title.replace(/ /g,'_')}.csv'; a.click();
-      }<\/script>
-    </body></html>
-  `);
+    const win = window.open('', '_blank');
+    const h = Object.keys(data[0] || {});
+    const csv = [h.join(','), ...data.map(r => h.map(x => `"${r[x]||''}"`).join(','))].join('\n');
+    win.document.write(`
+        <html><head><title>${title}</title><style>
+        body{font-family:sans-serif;padding:20px;background:#f8fafc;}
+        .top{display:flex;justify-content:space-between;margin-bottom:15px;}
+        .btn{background:#22c55e;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;}
+        table{border-collapse:collapse;width:100%;background:white;font-size:11px;}
+        th{background:#0f2240;color:white;padding:10px;text-align:left;position:sticky;top:0;}
+        td{border:1px solid #eee;padding:8px;white-space:nowrap;}
+        tr:nth-child(even){background:#f9f9f9;}
+        </style></head><body>
+        <div class="top"><h2>Raw Data: ${title} (${data.length})</h2><button class="btn" onclick="dl()">CSV</button></div>
+        <table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead>
+        <tbody>${data.map(r=>`<tr>${h.map(x=>`<td>${r[x]||''}</td>`).join('')}</tr>`).join('')}</tbody></table>
+        <script>function dl(){const b=new Blob([\`${csv.replace(/`/g, '\\`')}\`],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='Export.csv';a.click();}<\/script>
+        </body></html>
+    `);
 }
 
 function makeChart(id, config) {
-  if (charts[id]) charts[id].destroy();
-  const ctx = document.getElementById(id);
-  if (!ctx) return;
-  config.options = config.options || {};
-  config.options.onClick = handleChartClick;
-  config.options.onHover = (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; };
-  charts[id] = new Chart(ctx, config);
+    if (charts[id]) charts[id].destroy();
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    config.options = config.options || {};
+    config.options.onClick = handleChartClick;
+    config.options.onHover = (e, el) => e.native.target.style.cursor = el[0] ? 'pointer' : 'default';
+    charts[id] = new Chart(ctx, config);
 }
 
 // ═══════════════════════════════════════════════
-// 3. DATA PROCESSING & RENDER
+// DATA BUILDER
 // ═══════════════════════════════════════════════
-
 function buildDashboard(rows) {
-  _allRows = rows;
-  const h = Object.keys(rows[0] || {});
-  _colMap = {
-    status: h.find(x => x.toLowerCase().includes('status')),
-    month: h.find(x => x.toLowerCase().includes('month')),
-    createWeek: h.find(x => x.toLowerCase().includes('week')),
-    source: h.find(x => x.toLowerCase().includes('source') || x.toLowerCase().includes('channel')),
-    customer: h.find(x => x.toLowerCase().includes('customer')),
-    queue: h.find(x => x.toLowerCase().includes('queue') || x.toLowerCase().includes('team')),
-    frtSla: h.find(x => x.toLowerCase().includes('frt') && x.toLowerCase().includes('sla')),
-    artSla: h.find(x => x.toLowerCase().includes('art') && x.toLowerCase().includes('sla')),
-    frtMins: h.find(x => x.toLowerCase().includes('frt') && x.toLowerCase().includes('min')),
-    reopen: h.find(x => x.toLowerCase().includes('reopen')),
-    severity: h.find(x => x.toLowerCase().includes('severity')),
-    date: h.find(x => x.toLowerCase().includes('date') || x.toLowerCase().includes('created at'))
-  };
+    _allRows = rows;
+    const h = Object.keys(rows[0]||{});
+    _colMap = {
+        status: h.find(x => x.toLowerCase().includes('status')),
+        month: h.find(x => x.toLowerCase().includes('month')),
+        date: h.find(x => x.toLowerCase().includes('date') || x.toLowerCase().includes('created at')),
+        createWeek: h.find(x => x.toLowerCase().includes('week')),
+        source: h.find(x => x.toLowerCase().includes('source') || x.toLowerCase().includes('channel')),
+        customer: h.find(x => x.toLowerCase().includes('customer')),
+        queue: h.find(x => x.toLowerCase().includes('queue')),
+        dispL2: h.find(x => x.toLowerCase().includes('disposition folder level 2') || x.toLowerCase().includes('category')),
+        dispL3: h.find(x => x.toLowerCase().includes('disposition folder level 3') || x.toLowerCase().includes('sub-category')),
+        frtSla: h.find(x => x.toLowerCase().includes('frt') && x.toLowerCase().includes('sla')),
+        artSla: h.find(x => x.toLowerCase().includes('art') && x.toLowerCase().includes('sla')),
+        reopen: h.find(x => x.toLowerCase().includes('reopen')),
+        severity: h.find(x => x.toLowerCase().includes('severity'))
+    };
 
-  // Populate filter dropdowns
-  const fill = (id, col) => {
-    const s = document.getElementById(id);
-    const v = [...new Set(rows.map(r=>(r[col]||'').trim()))].filter(Boolean).sort();
-    s.innerHTML = '<option value="">All</option>' + v.map(x=>`<option value="${x}">${x}</option>`).join('');
-  };
-  fill('filterMonth', _colMap.month);
-  fill('filterCustomer', _colMap.customer);
-  fill('filterQueue', _colMap.queue);
+    const fill = (id, c) => {
+        const s = document.getElementById(id);
+        const v = [...new Set(rows.map(r=>(r[c]||'').trim()))].filter(Boolean).sort();
+        s.innerHTML = '<option value="">All</option>' + v.map(x=>`<option value="${x}">${x}</option>`).join('');
+    };
+    fill('filterMonth', _colMap.month);
+    fill('filterCustomer', _colMap.customer);
 
-  renderDashboard(rows);
-  document.getElementById('loadingState').style.display='none';
-  document.getElementById('dashboard').style.display='block';
+    renderDashboard(rows);
+    document.getElementById('loadingState').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    document.getElementById('rowCount').textContent = rows.length.toLocaleString() + ' tickets';
 }
 
 function applyFilters() {
-  const m = document.getElementById('filterMonth').value;
-  const f = document.getElementById('filterDateFrom').value;
-  const t = document.getElementById('filterDateTo').value;
-  const c = document.getElementById('filterCustomer').value;
-  const q = document.getElementById('filterQueue').value;
+    const m = document.getElementById('filterMonth').value;
+    const f = document.getElementById('filterDateFrom').value;
+    const t = document.getElementById('filterDateTo').value;
+    const c = document.getElementById('filterCustomer').value;
 
-  let filtered = _allRows;
-  if (m) filtered = filtered.filter(r => r[_colMap.month] === m);
-  if (c) filtered = filtered.filter(r => r[_colMap.customer] === c);
-  if (q) filtered = filtered.filter(r => r[_colMap.queue] === q);
-  if (f || t) {
-    filtered = filtered.filter(r => {
-      const d = new Date(r[_colMap.date]);
-      if (f && d < new Date(f)) return false;
-      if (t && d > new Date(t)) return false;
-      return true;
-    });
-  }
-  renderDashboard(filtered);
+    let fil = _allRows;
+    if (m) fil = fil.filter(r => r[_colMap.month] === m);
+    if (c) fil = fil.filter(r => r[_colMap.customer] === c);
+    if (f || t) {
+        fil = fil.filter(r => {
+            const d = new Date(r[_colMap.date]);
+            if (f && d < new Date(f)) return false;
+            if (t && d > new Date(t)) return false;
+            return true;
+        });
+    }
+    renderDashboard(fil);
 }
 
 function renderDashboard(data) {
-  const total = data.length;
-  const resolved = data.filter(r => {
-    const s = (r[_colMap.status]||'').toLowerCase();
-    return s.includes('complete') || s.includes('resolved') || s.includes('closed');
-  });
-  const resRate = ((resolved.length/total)*100).toFixed(1);
-  const pending = total - resolved.length;
+    const total = data.length;
+    const resolved = data.filter(r => (r[_colMap.status]||'').toLowerCase().includes('resolved') || (r[_colMap.status]||'').toLowerCase().includes('closed'));
+    const pending = total - resolved.length;
 
-  const getSla = (col) => {
-    const valid = data.filter(r => (r[col]||'').trim() !== "");
-    const within = valid.filter(r => (r[col]||'').toLowerCase().includes('within'));
-    return valid.length ? ((within.length/valid.length)*100).toFixed(1) : "0";
-  };
+    const getSlaPct = (col) => {
+        const v = data.filter(r => (r[col]||'').trim() !== "");
+        const w = v.filter(r => (r[col]||'').toLowerCase().includes('within')).length;
+        return v.length ? ((w/v.length)*100).toFixed(1) : "0";
+    };
 
-  // KPIs
-  document.getElementById('kpiGrid').innerHTML = `
-    <div class="kpi"><div class="kpi-num" style="color:var(--navy)">${total.toLocaleString()}</div><div class="kpi-lbl">Created</div><div class="kpi-sub">Total Volume</div></div>
-    <div class="kpi"><div class="kpi-num" style="color:var(--teal)">${resolved.length.toLocaleString()}</div><div class="kpi-lbl">Resolved</div><div class="kpi-sub">${resRate}% Rate</div></div>
-    <div class="kpi"><div class="kpi-num" style="color:var(--red)">${pending.toLocaleString()}</div><div class="kpi-lbl">Pending</div><div class="kpi-sub">Open Backlog</div></div>
-    <div class="kpi"><div class="kpi-num" style="color:var(--green)">${getSla(_colMap.frtSla)}%</div><div class="kpi-lbl">FRT SLA</div><div class="kpi-sub">Target: 90%</div></div>
-    <div class="kpi"><div class="kpi-num" style="color:var(--blue)">${getSla(_colMap.artSla)}%</div><div class="kpi-lbl">ART SLA</div><div class="kpi-sub">Target: 85%</div></div>
-  `;
+    // KPIs
+    document.getElementById('kpiGrid').innerHTML = `
+        <div class="kpi"><div class="kpi-num">${total.toLocaleString()}</div><div class="kpi-lbl">Created</div></div>
+        <div class="kpi"><div class="kpi-num" style="color:var(--teal)">${resolved.length.toLocaleString()}</div><div class="kpi-lbl">Resolved</div></div>
+        <div class="kpi"><div class="kpi-num" style="color:var(--red)">${pending.toLocaleString()}</div><div class="kpi-lbl">Pending</div></div>
+        <div class="kpi"><div class="kpi-num" style="color:var(--green)">${getSlaPct(_colMap.frtSla)}%</div><div class="kpi-lbl">FRT SLA</div></div>
+        <div class="kpi"><div class="kpi-num" style="color:var(--blue)">${getSlaPct(_colMap.artSla)}%</div><div class="kpi-lbl">ART SLA</div></div>
+    `;
 
-  // Weekly Chart
-  const weeks = [...new Set(data.map(r=>r[_colMap.createWeek]))].filter(Boolean).sort();
-  makeChart('weeklyChart', {
-    type:'bar',
-    data: { labels: weeks, datasets: [{ label:'Created', data: weeks.map(w=>data.filter(r=>r[_colMap.createWeek]===w).length), backgroundColor:COLORS.navy }] },
-    options: { responsive:true, maintainAspectRatio:false }
-  });
+    const count = (col, d = data) => {
+        const m = {};
+        d.forEach(r => { const v = r[col] || 'Unknown'; m[v] = (m[v]||0)+1; });
+        return m;
+    };
 
-  // Source Chart
-  const srcKeys = [...new Set(data.map(r=>r[_colMap.source]))].filter(Boolean);
-  makeChart('sourceChart', {
-    type:'doughnut',
-    data: { labels: srcKeys, datasets: [{ data: srcKeys.map(s=>data.filter(r=>r[_colMap.source]===s).length), backgroundColor:PALETTE }] },
-    options: { responsive:true, maintainAspectRatio:false, cutout:'60%' }
-  });
+    const topN = (obj, n=8) => Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,n);
 
-  // MoM Performance
-  const months = [...new Set(data.map(r=>r[_colMap.month]))].filter(Boolean);
-  makeChart('momChart', {
-    type:'bar',
-    data: { labels: months, datasets: [
-      { label:'Created', data: months.map(m=>data.filter(r=>r[_colMap.month]===m).length), backgroundColor:COLORS.navy },
-      { label:'Resolved', data: months.map(m=>data.filter(r=>r[_colMap.month]===m && (r[_colMap.status]||'').toLowerCase().includes('resolved')).length), backgroundColor:COLORS.teal }
-    ]},
-    options: { responsive:true, maintainAspectRatio:false }
-  });
+    // Main Charts
+    const wData = count(_colMap.createWeek);
+    makeChart('weeklyChart', { type:'bar', data:{labels:Object.keys(wData), datasets:[{label:'Volume', data:Object.values(wData), backgroundColor:COLORS.navy}]}, options:{responsive:true, maintainAspectRatio:false}});
 
-  // Customer & Queue (Simpler versions for brevity)
-  const custs = [...new Set(data.map(r=>r[_colMap.customer]))].slice(0,8);
-  makeChart('customerChart', {
-    type:'bar', data: { labels: custs, datasets:[{ label:'Volume', data: custs.map(c=>data.filter(r=>r[_colMap.customer]===c).length), backgroundColor:COLORS.blue }]},
-    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false }
-  });
+    const sData = count(_colMap.source);
+    makeChart('sourceChart', { type:'doughnut', data:{labels:Object.keys(sData), datasets:[{data:Object.values(sData), backgroundColor:PALETTE}]}, options:{responsive:true, maintainAspectRatio:false, cutout:'60%'}});
 
-  const queues = [...new Set(data.map(r=>r[_colMap.queue]))].slice(0,8);
-  makeChart('queueChart', {
-    type:'bar', data: { labels: queues, datasets:[{ label:'Volume', data: queues.map(q=>data.filter(r=>r[_colMap.queue]===q).length), backgroundColor:COLORS.teal }]},
-    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false }
-  });
+    // DISPOSITION LEVEL 2 LOGIC
+    const types = [{k:'Issue', i:0}, {k:'Query', i:1}, {k:'Service Request', i:2}];
+    types.forEach(t => {
+        const filRows = data.filter(r => (r[_colMap.dispL2]||'').toLowerCase().includes(t.k.toLowerCase()));
+        const subData = topN(count(_colMap.dispL3, filRows), 6);
+        makeChart(`subCatChart_${t.i}`, {
+            type:'bar',
+            data: { labels: subData.map(x=>x[0]), datasets:[{label:t.k, data: subData.map(x=>x[1]), backgroundColor:PALETTE[t.i]}]},
+            options: { indexAxis:'y', responsive:true, maintainAspectRatio:false }
+        });
+    });
 
-  // Severity
-  const sev = ['S1','S2','S3','S4'];
-  makeChart('sevChart', {
-    type:'pie', data: { labels: sev, datasets:[{ data: sev.map(s=>data.filter(r=>(r[_colMap.severity]||'').includes(s)).length), backgroundColor:[COLORS.red, COLORS.amber, COLORS.blue, COLORS.green] }]},
-    options: { responsive:true, maintainAspectRatio:false }
-  });
+    // Customer & Queue
+    const cData = topN(count(_colMap.customer));
+    makeChart('customerChart', { type:'bar', data:{labels:cData.map(x=>x[0]), datasets:[{label:'Volume', data:cData.map(x=>x[1]), backgroundColor:COLORS.blue}]}, options:{indexAxis:'y', responsive:true, maintainAspectRatio:false}});
 
-  // Update Footer/Meta
-  document.getElementById('rowCount').textContent = data.length.toLocaleString() + ' tickets';
-  document.getElementById('fileName').textContent = '📄 Google Sheets Sync';
-  document.getElementById('fileMeta').textContent = `Showing analytics for ${data.length} records`;
+    const qData = topN(count(_colMap.queue));
+    makeChart('queueChart', { type:'bar', data:{labels:qData.map(x=>x[0]), datasets:[{label:'Volume', data:qData.map(x=>x[1]), backgroundColor:COLORS.teal}]}, options:{indexAxis:'y', responsive:true, maintainAspectRatio:false}});
+
+    // Performance
+    const slaData = count(_colMap.frtSla);
+    makeChart('slaChart', { type:'pie', data:{labels:Object.keys(slaData), datasets:[{data:Object.values(slaData), backgroundColor:[COLORS.teal, COLORS.red]}]}, options:{responsive:true, maintainAspectRatio:false}});
+
+    const rData = count(_colMap.reopen);
+    makeChart('reopenChart', { type:'doughnut', data:{labels:Object.keys(rData), datasets:[{data:Object.values(rData), backgroundColor:PALETTE}]}, options:{responsive:true, maintainAspectRatio:false}});
+
+    const sevData = count(_colMap.severity);
+    makeChart('sevChart', { type:'pie', data:{labels:Object.keys(sevData), datasets:[{data:Object.values(sevData), backgroundColor:[COLORS.red, COLORS.amber, COLORS.blue, COLORS.green]}]}, options:{responsive:true, maintainAspectRatio:false}});
 }
 
-async function generatePPT() {
-  alert("Preparing PowerPoint Report... This may take a moment.");
-  // Add your existing PptxGenJS logic here
-}
+function generatePPT() { alert("Building PPT..."); }
 
 window.onload = () => fetch(DEFAULT_SHEET_URL).then(r=>r.text()).then(t=>Papa.parse(t,{header:true, complete:res=>buildDashboard(res.data)}));
 </script>

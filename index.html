@@ -940,18 +940,18 @@ function buildDashboard(rows, filename) {
       const artT = rows.filter(r=>(r[C.artSla]||'').trim() !== '').length;
       kpis.push({ num: pct(artW,artT), lbl:'ART Within SLA', sub: fmt(artW)+' / '+fmt(artT), col: artW/artT>.7?'c-green':'c-amber' });
     }
-document.getElementById('kpiGrid').innerHTML = kpis.map(k=>`
-  <div class="kpi" style="cursor:pointer"
-       onclick="handleKPIClick('${k.lbl}')">
-    <div class="kpi-num ${k.col}">${k.num}</div>
-    <div class="kpi-lbl">${k.lbl}</div>
-    <div class="kpi-sub" style="color:#64748b">${k.sub}</div>
-  </div>
-`).join('');
-      <div class="kpi"><div class="kpi-num ${k.col}">${k.num}</div>
-      <div class="kpi-lbl">${k.lbl}</div>
-      <div class="kpi-sub" style="color:#64748b">${k.sub}</div></div>`).join('');
-    document.getElementById('kpiGrid').style.gridTemplateColumns = `repeat(${kpis.length}, 1fr)`;
+// Update the KPI Grid
+    const kpiContainer = document.getElementById('kpiGrid');
+    kpiContainer.innerHTML = kpis.map(k => `
+      <div class="kpi" style="cursor:pointer" onclick="handleKPIClick('${k.lbl}')">
+        <div class="kpi-num ${k.col}">${k.num}</div>
+        <div class="kpi-lbl">${k.lbl}</div>
+        <div class="kpi-sub" style="color:#64748b">${k.sub}</div>
+      </div>
+    `).join('');
+    
+    kpiContainer.style.display = 'grid';
+    kpiContainer.style.gridTemplateColumns = `repeat(${kpis.length}, 1fr)`;
 
     // ── WEEKLY TREND ──
     if (C.createWeek && C.resolveWeek) {

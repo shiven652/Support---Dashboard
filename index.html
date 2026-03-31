@@ -488,6 +488,7 @@ const COLORS = {
 const PALETTE = [COLORS.navy, COLORS.teal, COLORS.amber, COLORS.red, COLORS.blue, COLORS.purple, COLORS.green, COLORS.orange, COLORS.pink, COLORS.slate];
 let charts = {};
 let _allRows = [];      // full unfiltered dataset
+let _filteredRows = [];
 let _sourceName = '';   // for re-renders
 let _colMap = {};       // detected column map
 
@@ -828,6 +829,7 @@ function applyFilters() {
       return true;
     });
   }
+  _filteredRows = filtered;
 
   // ✅ CHANGE 3: Include subStatus in isFiltered check
   const isFiltered = customer || queue || month || subStatus || dateFrom || dateTo;
@@ -1832,8 +1834,8 @@ monthEl.addEventListener('change', () => {
 // 🔥 CLICK + RAW DATA ENGINE
 // =============================
 function openFilteredData(filterFn) {
-  const data = _allRows.filter(filterFn);
-  openInNewWindow(data);
+const base = _filteredRows.length ? _filteredRows : _allRows;
+const data = base.filter(filterFn);  openInNewWindow(data);
 }
 
 function openInNewWindow(data) {

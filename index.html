@@ -850,6 +850,9 @@ function resetFilters() {
   ['filterDateFrom','filterDateTo'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+document.getElementById('filterMonth').disabled = false;
+document.getElementById('filterDateFrom').disabled = false;
+document.getElementById('filterDateTo').disabled = false;
   const fc = document.getElementById('filterCount');
   if (fc) fc.style.display = 'none';
   Object.values(charts).forEach(c => c.destroy()); charts = {};
@@ -937,7 +940,14 @@ function buildDashboard(rows, filename) {
       const artT = rows.filter(r=>(r[C.artSla]||'').trim() !== '').length;
       kpis.push({ num: pct(artW,artT), lbl:'ART Within SLA', sub: fmt(artW)+' / '+fmt(artT), col: artW/artT>.7?'c-green':'c-amber' });
     }
-    document.getElementById('kpiGrid').innerHTML = kpis.map(k=>`
+document.getElementById('kpiGrid').innerHTML = kpis.map(k=>`
+  <div class="kpi" style="cursor:pointer"
+       onclick="handleKPIClick('${k.lbl}')">
+    <div class="kpi-num ${k.col}">${k.num}</div>
+    <div class="kpi-lbl">${k.lbl}</div>
+    <div class="kpi-sub" style="color:#64748b">${k.sub}</div>
+  </div>
+`).join('');
       <div class="kpi"><div class="kpi-num ${k.col}">${k.num}</div>
       <div class="kpi-lbl">${k.lbl}</div>
       <div class="kpi-sub" style="color:#64748b">${k.sub}</div></div>`).join('');
@@ -970,6 +980,14 @@ function buildDashboard(rows, filename) {
             { label:'Resolve Rate %', data:rates, type:'line', borderColor:COLORS.amber, backgroundColor:'transparent', pointBackgroundColor:COLORS.amber, pointRadius:4, borderWidth:2, tension:0.3, yAxisID:'y2' }
           ]},
         options:{ responsive:true, maintainAspectRatio:false,
+          onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{ legend:{ display:true, position:'top', labels:{ font:{size:10}, boxWidth:12, padding:8 }}, tooltip:{mode:'index',intersect:false} },
           scales:{
             x:{ grid:{display:false}, ticks:{font:{size:9}} },
@@ -993,6 +1011,14 @@ function buildDashboard(rows, filename) {
         type:'doughnut',
         data:{ labels:top.map(x=>x[0]), datasets:[{ data:top.map(x=>x[1]), backgroundColor:PALETTE.slice(0,top.length), borderWidth:2, borderColor:'#fff', hoverOffset:8 }]},
         options:{ responsive:true, maintainAspectRatio:false, cutout:'65%',
+          onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)} (${pct(c.raw,total)})`}}}}
       });
       document.getElementById('sourceLeg').innerHTML = top.map((x,i)=>`
@@ -1028,6 +1054,14 @@ function buildDashboard(rows, filename) {
             { label:'Resolved', data:months.map(m=>mResolve[m]), backgroundColor:COLORS.teal, borderRadius:4, barPercentage:0.7 }
           ]},
         options:{ responsive:true, maintainAspectRatio:false,
+                   onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{ legend:{display:true, position:'top', labels:{font:{size:10}, boxWidth:12, padding:8}}, tooltip:{mode:'index',intersect:false} },
           scales:{ x:{grid:{display:false},ticks:{font:{size:10}}}, y:{grid:{color:'#f1f5f9'},ticks:{font:{size:9}}} }},
         plugins: barLabelsPlugin()
@@ -1050,6 +1084,14 @@ function buildDashboard(rows, filename) {
       makeChart('queueChart', {
         type:'bar', data:{ labels:top.map(x=>x[0]), datasets:[{ data:top.map(x=>x[1]), backgroundColor:PALETTE.slice(0,top.length), borderRadius:4, barPercentage:0.7 }]},
         options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+                   onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{legend:{display:false}, tooltip:{mode:'index',intersect:false}},
           scales:{ x:{grid:{color:'#f1f5f9'},ticks:{font:{size:9}}}, y:{grid:{display:false},ticks:{font:{size:10}}} }}
       });
@@ -1066,6 +1108,14 @@ function buildDashboard(rows, filename) {
       makeChart('dispChart', {
         type:'bar', data:{ labels:months, datasets },
         options:{ responsive:true, maintainAspectRatio:false,
+                   onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{legend:{display:true, position:'top', labels:{font:{size:9}, boxWidth:10, padding:6}}, tooltip:{mode:'index',intersect:false}},
           scales:{ x:{stacked:true, grid:{display:false},ticks:{font:{size:10}}}, y:{stacked:true, grid:{color:'#f1f5f9'},ticks:{font:{size:9}}} }}
       });
@@ -1082,6 +1132,14 @@ function buildDashboard(rows, filename) {
       makeChart('customerChart', {
         type:'bar', data:{ labels:topCusts.map(c=>c.length>18?c.slice(0,17)+'…':c), datasets },
         options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+                   onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{legend:{display:true, position:'top', labels:{font:{size:9}, boxWidth:10, padding:6}}, tooltip:{mode:'index',intersect:false}},
           scales:{ x:{stacked:true, grid:{color:'#f1f5f9'},ticks:{font:{size:9}}}, y:{stacked:true, grid:{display:false},ticks:{font:{size:10}}} }}
       });
@@ -1171,6 +1229,14 @@ function buildDashboard(rows, filename) {
           type:'line',
           data:{ labels:dodLabels, datasets:dodDatasets },
           options:{ responsive:true, maintainAspectRatio:false,
+                     onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
             plugins:{
               legend:{ display: dodResolvedCounts !== null, position:'top', labels:{font:{size:10}, boxWidth:12, padding:8} },
               tooltip:{mode:'index',intersect:false}
@@ -1202,6 +1268,14 @@ function buildDashboard(rows, filename) {
       makeChart('dayChart', {
         type:'bar', data:{ labels:days.map(d=>d.slice(0,3)), datasets:[{ data:dayAvgs, backgroundColor:days.map(d=>d===peakDay?COLORS.red:COLORS.teal), borderRadius:6, barPercentage:0.7 }]},
         options:{ responsive:true, maintainAspectRatio:false,
+                   onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{legend:{display:false}, tooltip:{mode:'index',intersect:false, callbacks:{label:c=>` Avg: ${c.raw} tickets`}}},
           scales:{ x:{grid:{display:false},ticks:{font:{size:10}}}, y:{grid:{color:'#f1f5f9'},ticks:{font:{size:9}}} }},
         plugins: barLabelsPlugin()
@@ -1222,6 +1296,14 @@ function buildDashboard(rows, filename) {
       makeChart('slaChart', {
         type:'doughnut', data:{ labels, datasets:[{ data, backgroundColor:bgs, borderWidth:2, borderColor:'#fff' }]},
         options:{ responsive:true, maintainAspectRatio:false, cutout:'55%',
+                   onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{ legend:{display:true, position:'right', labels:{font:{size:9}, boxWidth:10, padding:5}}, tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)}`}} }}
       });
       const slaStats = [];
@@ -1242,6 +1324,14 @@ function buildDashboard(rows, filename) {
       makeChart('frtChart', {
         type:'bar', data:{ labels:months, datasets:[{ label:'Avg FRT (mins)', data:frtByMonth, backgroundColor:colors, borderRadius:8, barPercentage:0.55 }]},
         options:{ responsive:true, maintainAspectRatio:false,
+                   onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.raw} mins avg FRT`}}},
           scales:{ x:{grid:{display:false},ticks:{font:{size:10}}}, y:{grid:{color:'#f1f5f9'},ticks:{font:{size:9}}} }},
         plugins: barLabelsPlugin()
@@ -1265,6 +1355,14 @@ function buildDashboard(rows, filename) {
         data:{ labels:['Never','Reopened 1x','Reopened 2x','Reopened 3x','Reopened 4x','5x+'],
           datasets:[{ data:[never,once,twice,thrice,quad,more], backgroundColor:[COLORS.green,COLORS.amber,COLORS.red,COLORS.purple,COLORS.blue,COLORS.slate], borderWidth:2, borderColor:'#fff', hoverOffset:6 }]},
         options:{ responsive:true, maintainAspectRatio:false, cutout:'55%',
+                   onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{ legend:{display:true, position:'right', labels:{font:{size:9}, boxWidth:10, padding:5}}, tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)} (${pct(c.raw,total)})`}} }}
       });
       const reopenedPct = pct(total-never,total);
@@ -1319,6 +1417,14 @@ function buildDashboard(rows, filename) {
               data: { labels: months, datasets },
               options: {
                 responsive: true, maintainAspectRatio: false,
+                  onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
                 plugins: {
                   legend: { display: true, position: 'top', labels: { font: { size: 9 }, boxWidth: 10, padding: 6 } },
                   tooltip: { mode: 'index', intersect: false }
@@ -1359,6 +1465,14 @@ function buildDashboard(rows, filename) {
       makeChart('disp3Chart', {
         type:'line', data:{ labels:months, datasets:datasets3 },
         options:{ responsive:true, maintainAspectRatio:false,
+                   onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{ legend:{display:true, position:'top', labels:{font:{size:9}, boxWidth:10, padding:6}}, tooltip:{mode:'index',intersect:false}},
           scales:{ x:{grid:{display:false},ticks:{font:{size:10}}}, y:{grid:{color:'#f1f5f9'},ticks:{font:{size:9}}} }}
       });
@@ -1374,6 +1488,14 @@ function buildDashboard(rows, filename) {
       makeChart('sevChart', {
         type:'doughnut', data:{ labels:top.map(x=>x[0]), datasets:[{ data:top.map(x=>x[1]), backgroundColor:bgs, borderWidth:2, borderColor:'#fff', hoverOffset:8 }]},
         options:{ responsive:true, maintainAspectRatio:false, cutout:'58%',
+                   onClick: (e, elements) => {
+    if (!elements.length) return;
+
+    const index = elements[0].index;
+    const label = e.chart.data.labels[index];
+
+    handleChartClick(e.chart.canvas.id, label);
+  },
           plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)} (${pct(c.raw,top.reduce((a,x)=>a+x[1],0))})`}} }}
       });
       const sevTotal = top.reduce((a,x)=>a+x[1],0);
@@ -1677,6 +1799,163 @@ async function generatePPT() {
   loadFromUrl(DEFAULT_SHEET_URL, 'Google Sheet');
 })();
 
+  // =============================
+// 🔥 MONTH vs DATE FILTER LOGIC
+// =============================
+const monthEl = document.getElementById('filterMonth');
+const fromEl = document.getElementById('filterDateFrom');
+const toEl = document.getElementById('filterDateTo');
+
+monthEl.addEventListener('change', () => {
+  if (monthEl.value) {
+    fromEl.value = '';
+    toEl.value = '';
+    fromEl.disabled = true;
+    toEl.disabled = true;
+  } else {
+    fromEl.disabled = false;
+    toEl.disabled = false;
+  }
+});
+
+[fromEl, toEl].forEach(el => {
+  el.addEventListener('change', () => {
+    if (fromEl.value || toEl.value) {
+      monthEl.value = '';
+      monthEl.disabled = true;
+    } else {
+      monthEl.disabled = false;
+    }
+  });
+});
+// =============================
+// 🔥 CLICK + RAW DATA ENGINE
+// =============================
+function openFilteredData(filterFn) {
+  const data = _allRows.filter(filterFn);
+  openInNewWindow(data);
+}
+
+function openInNewWindow(data) {
+  if (!data.length) {
+    alert("No data found");
+    return;
+  }
+
+  let win = window.open("", "_blank");
+
+  let html = `
+    <html>
+    <head>
+      <title>Raw Data</title>
+      <style>
+        body { font-family: Arial; padding:10px; }
+        button {
+          background:#0f2240; color:#fff; border:none;
+          padding:8px 16px; border-radius:6px; cursor:pointer;
+          margin-bottom:10px;
+        }
+        table { border-collapse: collapse; width:100%; font-size:12px; }
+        th, td { border:1px solid #ddd; padding:6px; }
+        th { background:#0f2240; color:#fff; position:sticky; top:0; }
+      </style>
+    </head>
+    <body>
+
+      <h3>Total Records: ${data.length}</h3>
+
+      <button onclick="downloadCSV()">⬇ Download CSV</button>
+
+      <table>
+        <tr>${Object.keys(data[0]).map(k => `<th>${k}</th>`).join('')}</tr>
+        ${data.slice(0, 2000).map(row => `
+          <tr>${Object.values(row).map(v => `<td>${v ?? ''}</td>`).join('')}</tr>
+        `).join('')}
+      </table>
+
+      <script>
+        const tableData = ${JSON.stringify(data)};
+
+        function downloadCSV() {
+          const headers = Object.keys(tableData[0]);
+          const rows = tableData.map(r =>
+            headers.map(h => '"' + (r[h] ?? '') + '"').join(',')
+          );
+
+          const csv = [headers.join(','), ...rows].join('\\n');
+
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'raw_data.csv';
+          a.click();
+
+          URL.revokeObjectURL(url);
+        }
+      <\/script>
+
+    </body>
+    </html>
+  `;
+
+  win.document.write(html);
+}
+  function handleKPIClick(type) {
+  const C = _colMap;
+
+  if (type.includes('Pending') || type.includes('Open')) {
+    openFilteredData(r => {
+      const s = (r[C.status] || '').toLowerCase();
+      return s.includes('pending') || s.includes('open') || s.includes('new');
+    });
+  }
+
+  if (type.includes('Resolved')) {
+    openFilteredData(r => {
+      const s = (r[C.status] || '').toLowerCase();
+      return s.includes('resolved') || s.includes('closed');
+    });
+  }
+
+  if (type.includes('Total Created')) {
+    openFilteredData(() => true);
+  }
+}
+  function handleChartClick(chartId, label) {
+  const C = _colMap;
+
+  switch (chartId) {
+
+    case 'weeklyChart':
+      openFilteredData(r => (r[C.createWeek] || '') === label.replace('W','Week - '));
+      break;
+
+    case 'momChart':
+      openFilteredData(r => (r[C.month] || '') === label);
+      break;
+
+    case 'sourceChart':
+      openFilteredData(r => (r[C.source] || '') === label);
+      break;
+
+    case 'queueChart':
+      openFilteredData(r => (r[C.queue] || '') === label);
+      break;
+
+    case 'customerChart':
+      openFilteredData(r => (r[C.customer] || '').includes(label));
+      break;
+
+    case 'dayChart':
+      openFilteredData(r => (r[C.day] || '') === label);
+      break;
+
+    default:
+      console.log("No handler for:", chartId);
+  }
+}
 </script>
 </body>
 </html>

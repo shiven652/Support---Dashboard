@@ -142,14 +142,78 @@ const MONTH_MAP = {"JAN":0,"FEB":1,"MAR":2,"APR":3,"MAY":4,"JUN":5,"JUL":6,"AUG"
 // Robust date parser for the Table
 function parseSheetDate(dStr) {
     if (!dStr) return null;
-    const d = new Date(dStr);
-    if (!isNaN(d.getTime())) { d.setHours(0,0,0,0); return d; }
+    
+    // Attempt standard JS parsing first
+    let d = new Date(dStr);
+    if (!isNaN(d.getTime())) {
+        d.setHours(0,0,0,0);
+        return d;
+    }
+    
+    // Fallback for "21 APR 2026" custom strings
     const parts = String(dStr).trim().toUpperCase().split(/\s+/);
     if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
         const month = MONTH_MAP[parts[1]];
-        if (month !== undefined) return new Date(parseInt(parts[2], 10), month, parseInt(parts[0], 10), 0,0,0);
+        const year = parseInt(parts[2], 10);
+        if (month !== undefined && !isNaN(day)) {
+            return new Date(year, month, day, 0, 0, 0);
+        }
     }
     return null;
+}
+
+function renderTable() {
+    const wrap = document.getElementById('bookings-wrap');
+    const today = new Date(); 
+    today.setHours(0, 0, 0, 0);
+
+    console.log("Total rows found:", allRows.length); // Debug check
+
+    const upcoming = allRows
+        .map(b => {
+            const parsedDate = parseSheetDate(b.date);
+            return { ...b, _sortDate: parsedDate };
+        })
+        .filter(b => {
+            // Include today and future bookings
+            return b._sortDate !== null && b._sortDate >= today;
+        })
+        .sort((a, b) => a._sortDate - b._sortDate);
+
+    if (upcoming.length === 0) {
+        wrap.innerHTML = `<div style="background:#fff;padding:20px;text-align:center;color:#aaa;font-size:12px;">
+            No upcoming bookings found for today or future dates.
+        </div>`;
+        return;
+    }
+
+    wrap.innerHTML = `
+        <table class="bookings-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Slot</th>
+                    <th>Client</th>
+                    <th>Project</th>
+                    <th>Name</th>
+                    <th>Booked By</th>
+                    <th>Checklist</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${upcoming.map(b => `
+                    <tr>
+                        <td>${b.date}</td>
+                        <td>${b.time}</td>
+                        <td>${b.client || '-'}</td>
+                        <td>${b.project || '-'}</td>
+                        <td>${b.name}</td>
+                        <td><span class="audit-pill">${b.bookedByName || b.bookedByEmail}</span></td>
+                        <td>${b.checklist ? `<a href="${b.checklist}" target="_blank" class="link-btn">View</a>` : '-'}</td>
+                    </tr>`).join('')}
+            </tbody>
+        </table>`;
 }
 
 function handleGoogleLogin(response) {

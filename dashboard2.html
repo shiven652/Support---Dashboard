@@ -192,14 +192,26 @@ function getWeekDays(o) {
 }
 
 function fmtDate(d) { return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase(); }
-function skey(dk, i) { return `w${weekOffset}_${dk}_${i}`; }
 
+// UPDATED: Now uses absolute date strings to avoid week-overlap bugs
+function skey(dateObj, i) { 
+    const dateStr = fmtDate(dateObj).replace(/ /g, '_'); 
+    return `${dateStr}_${i}`; 
+}
+
+// UPDATED: Tuesday window closes on preceding Friday, Thursday closes on preceding Tuesday
 function isBookingOpen(slotDate, dk) {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const today = new Date(); 
+    today.setHours(0, 0, 0, 0);
     let deadline = new Date(slotDate);
-    deadline.setDate(slotDate.getDate() - (dk === 'tue' ? 5 : 3));
+    
+    if (dk === 'tue') {
+        deadline.setDate(slotDate.getDate() - 4); // Tue - 4 days = Friday
+    } else {
+        deadline.setDate(slotDate.getDate() - 2); // Thu - 2 days = Tuesday
+    }
     deadline.setHours(0, 0, 0, 0);
-    return today <= deadline;
+    return today < deadline;
 }
 
 async function fetchLive() {
@@ -214,6 +226,7 @@ async function fetchLive() {
     } catch (e) { render(); }
 }
 
+// UPDATED: Now displays "Booking Closed" when window is shut and slot is empty
 function render() {
     const {tue, thu, mon} = getWeekDays(weekOffset);
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -225,8 +238,9 @@ function render() {
         const isPast = day.d < today;
         const bookingOpen = isBookingOpen(day.d, day.dk);
         let slotsHtml = SLOTS.map((s, i) => {
-            const k = skey(day.dk, i);
+            const k = skey(day.d, i);
             const b = bookings[k];
+            
             if (b) {
                 const isOwnerOrAdmin = currentUser && (
                     (b.bookedByEmail && b.bookedByEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
@@ -234,13 +248,15 @@ function render() {
                 );
                 const displayName = b.bookedByName || b.bookedByEmail || 'Unknown';
                 const bookedByLabel = `<div class="booked-by">by ${displayName}</div>`;
-                let actionBtn = isOwnerOrAdmin ? `<button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button>` : `<div class="locked-badge" title="Only the owner or admin can cancel">🔒</div>`;
+                let actionBtn = isOwnerOrAdmin ? `<button class="cancel-btn" onclick="handleCancel('${day.d}',${i},'${day.dk}')">Cancel</button>` : `<div class="locked-badge" title="Only the owner or admin can cancel">🔒</div>`;
                 return `<div class="slot-row"><span>${s.s} – ${s.e}</span><div style="display:flex;align-items:center;gap:8px;">${bookedByLabel}<div class="booked-badge">Booked</div>${actionBtn}</div></div>`;
             }
+            
             if (isPast || !bookingOpen) {
-                return `<div class="slot-row" style="opacity:0.6;"><span>${s.s} – ${s.e}</span><div class="closed-badge">${isPast ? 'Closed' : 'Deadline'}</div></div>`;
+                return `<div class="slot-row" style="opacity:0.6;"><span>${s.s} – ${s.e}</span><div class="closed-badge">Booking Closed</div></div>`;
             }
-            return `<div class="slot-row"><span>${s.s} – ${s.e}</span><button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')"><span class="avail-label">Available</span><span class="avail-plus">+</span></button></div>`;
+            
+            return `<div class="slot-row"><span>${s.s} – ${s.e}</span><button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}', new Date(${day.d.getTime()}))"><span class="avail-label">Available</span><span class="avail-plus">+</span></button></div>`;
         }).join('');
         grid.innerHTML += `<div class="day-card"><div class="day-header"><div>${day.l}<br><small style="color:#aaa;font-size:10px;">${fmtDate(day.d)}</small></div></div><div>${slotsHtml}</div></div>`;
     });
@@ -260,8 +276,8 @@ function renderTable() {
     </tbody></table>`;
 }
 
-function openModal(dk, i, l) {
-    pendingKey = {dk, i, l};
+function openModal(dk, i, l, realDate) {
+    pendingKey = {dk, i, l, date: realDate};
     document.getElementById('modal-sub').textContent = `${l} · ${SLOTS[i].s}`;
     document.getElementById('f-name').value = currentUser ? currentUser.name : '';
     document.getElementById('f-email').value = currentUser ? currentUser.email : '';
@@ -272,8 +288,7 @@ function openModal(dk, i, l) {
 function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 
 async function confirmBooking() {
-    const {tue, thu} = getWeekDays(weekOffset);
-    const targetKey = skey(pendingKey.dk, pendingKey.i);
+    const targetKey = skey(pendingKey.date, pendingKey.i);
 
     if (bookings[targetKey]) {
         alert("This slot was just booked by someone else.");
@@ -304,7 +319,7 @@ async function confirmBooking() {
         action: 'book',
         slotKey: targetKey,
         day: pendingKey.l,
-        date: fmtDate(pendingKey.dk === 'tue' ? tue : thu),
+        date: fmtDate(pendingKey.date),
         time: `${SLOTS[pendingKey.i].s} - ${SLOTS[pendingKey.i].e}`,
         ...data
     };
@@ -326,9 +341,10 @@ async function confirmBooking() {
     }
 }
 
-async function handleCancel(dk, i) {
+async function handleCancel(rawDate, i) {
     if (!confirm("Cancel this booking?")) return;
-    const payload = { action: 'cancel', slotKey: skey(dk, i), cancelledByName : currentUser ? currentUser.name : '', cancelledByEmail: currentUser ? currentUser.email : '' };
+    const dateObj = new Date(rawDate);
+    const payload = { action: 'cancel', slotKey: skey(dateObj, i), cancelledByName : currentUser ? currentUser.name : '', cancelledByEmail: currentUser ? currentUser.email : '' };
     const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)});
     const result = await res.json();
     if (result.success) { fetchLive(); }

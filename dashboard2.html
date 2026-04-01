@@ -4,29 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kapture | Client Transition Portal</title>
+
+    <!-- Google Sign-In SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <style>
         *{box-sizing:border-box;margin:0;padding:0;}
-        #login-screen { display: flex; min-height: 100vh; align-items: center; justify-content: center; background: #111; flex-direction: column; gap: 28px; }
-        .login-box { background: #fff; padding: 44px 40px 36px; width: 100%; max-width: 380px; text-align: center; }
+
+        /* ─── LOGIN SCREEN ─────────────────────────────────────────────── */
+        #login-screen {
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            background: #111;
+            flex-direction: column;
+            gap: 28px;
+        }
+        .login-box {
+            background: #fff;
+            padding: 44px 40px 36px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+        }
         .login-logo { height: 28px; margin-bottom: 20px; }
         .login-title { font-size: 18px; font-weight: 300; color: #111; margin-bottom: 4px; }
         .login-title em { color: #cc1f2d; font-style: normal; font-weight: 600; }
         .login-sub { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 28px; }
         .login-divider { border: none; border-top: 1px solid #eee; margin: 20px 0; }
         .login-note { font-size: 10px; color: #bbb; margin-top: 14px; }
+        /* Center the Google button */
+        #g_id_signin { display: flex; justify-content: center; }
+
+        /* ─── MAIN PORTAL ──────────────────────────────────────────────── */
         #portal-screen { display: none; }
+
         .portal{background:#f2f1ef;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
         .topbar{background:#111;padding:0 28px;height:60px;display:flex;align-items:center;gap:0;}
         .logo-img {height: 25px; width: auto; margin-right: 20px;}
         .topbar-brand{color:#fff;font-size:13px;font-weight:600;margin-right:20px;border-right:1px solid #333;padding-right:20px;}
         .topbar-sub{color:#777;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;}
-        .topbar-user { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-        .user-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #333; object-fit: cover; }
-        .user-avatar-placeholder { width: 30px; height: 30px; border-radius: 50%; background: #cc1f2d; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+        /* User pill on the right */
+        .topbar-user {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            object-fit: cover;
+        }
+        .user-avatar-placeholder {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: #cc1f2d;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
         .user-name { color: #ccc; font-size: 11px; }
-        .signout-btn { background: none; border: 1px solid #444; color: #888; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; padding: 5px 10px; cursor: pointer; transition: border-color .2s, color .2s; }
+        .signout-btn {
+            background: none;
+            border: 1px solid #444;
+            color: #888;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: border-color .2s, color .2s;
+        }
         .signout-btn:hover { border-color: #cc1f2d; color: #cc1f2d; }
+
         .main{padding:32px 28px 60px; max-width: 1200px; margin: 0 auto;}
         .page-header{margin-bottom:22px;border-bottom:1px solid #ccc;padding-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;}
         .page-title{font-size:26px;font-weight:300;color:#111;letter-spacing:-.5px;}
@@ -45,8 +101,11 @@
         .avail-plus{padding:6px 9px;background:#1e9e6e;color:#fff;font-size:14px;}
         .booked-badge{padding:6px 12px;font-size:10px;font-weight:700;background:#cc1f2d;color:#fff;text-transform:uppercase;}
         .closed-badge{padding:6px 12px;font-size:10px;font-weight:700;background:#eee;color:#999;text-transform:uppercase;}
-        .cancel-btn{padding:6px 10px;font-size:10px;font-weight:600;background:#fff;color:#cc1f2d;border:1px solid #cc1f2d;cursor:pointer;text-transform:uppercase;}
+        .cancel-btn{padding:6px 10px;font-size:10px;font-weight:600;background:#fff;color:#888;border:1px solid #ccc;cursor:pointer;text-transform:uppercase;}
         .locked-badge{padding:5px 8px;font-size:13px;color:#ccc;cursor:default;border:1px solid #eee;background:#fafafa;border-radius:2px;}
+        .locked-badge:hover{border-color:#ddd;color:#aaa;}
+
+        /* ─── MODAL ────────────────────────────────────────────────────── */
         .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;align-items:center;justify-content:center;}
         .modal-overlay.open{display:flex;}
         .modal{background:#fff;width:100%;max-width:420px;box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);}
@@ -58,42 +117,93 @@
         .field input[readonly]{background:#f7f7f7;color:#666;cursor:default;}
         .modal-footer{padding:0 22px 22px;display:flex;gap:10px;}
         .confirm-btn{flex:1;padding:12px;background:#111;color:#fff;border:none;font-size:12px;font-weight:600;text-transform:uppercase;cursor:pointer;}
-        .confirm-btn:disabled{background:#666;cursor:not-allowed;}
-        .required-star { color: #cc1f2d; font-weight: bold; margin-left: 2px; }
-        .booked-by { font-size: 9px; color: #aaa; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+
+        /* ─── BOOKED-BY tag ────────────────────────────────────────────── */
+        .booked-by {
+            font-size: 9px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            white-space: nowrap;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ─── TABLE ─────────────────────────────────────────────────────── */
         .bookings-table{width:100%;border-collapse:collapse;font-size:11px;background:#fff;border:1px solid #ddd;}
         .bookings-table th{background:#111;color:#fff;padding:12px;text-align:left;text-transform:uppercase;font-size:9px;}
         .bookings-table td{padding:10px 12px;border-bottom:1px solid #f2f2f2;}
         .link-btn {color: #cc1f2d; text-decoration: none; font-weight: bold;}
-        .audit-pill { display: inline-block; background: #f0f0f0; color: #666; font-size: 9px; padding: 2px 7px; border-radius: 20px; letter-spacing: .3px; }
+
+        /* ─── AUDIT BADGE ───────────────────────────────────────────────── */
+        .audit-pill {
+            display: inline-block;
+            background: #f0f0f0;
+            color: #666;
+            font-size: 9px;
+            padding: 2px 7px;
+            border-radius: 20px;
+            letter-spacing: .3px;
+        }
     </style>
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════════ -->
 <div id="login-screen">
     <div class="login-box">
         <img src="https://testrigor.com/wp-content/uploads/2023/12/kapture-cx.svg" alt="Kapture" class="login-logo">
         <div class="login-title">Client <em>Transition</em> Portal</div>
         <div class="login-sub">Handover Scheduling System</div>
         <hr class="login-divider">
-        <div id="g_id_onload" data-client_id="354238215970-vj0hflaubcofhm79qej4lee4c11n57fu.apps.googleusercontent.com" data-callback="handleGoogleLogin" data-auto_prompt="false"></div>
-        <div id="g_id_signin" class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
+
+        <!--
+            SETUP REQUIRED:
+            Replace YOUR_GOOGLE_CLIENT_ID below with your actual OAuth 2.0 Client ID
+            from https://console.cloud.google.com/ → APIs & Services → Credentials
+            Authorised JavaScript origins must include your site's domain.
+        -->
+        <div id="g_id_onload"
+             data-client_id="354238215970-vj0hflaubcofhm79qej4lee4c11n57fu.apps.googleusercontent.com"
+             data-callback="handleGoogleLogin"
+             data-auto_prompt="false">
+        </div>
+        <div id="g_id_signin"
+             class="g_id_signin"
+             data-type="standard"
+             data-size="large"
+             data-theme="outline"
+             data-text="sign_in_with"
+             data-shape="rectangular"
+             data-logo_alignment="left">
+        </div>
+
         <p class="login-note">Sign in with your Google account to access the portal.</p>
     </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════
+     MAIN PORTAL
+═══════════════════════════════════════════ -->
 <div id="portal-screen">
 <div class="portal">
     <div class="topbar">
         <img src="https://testrigor.com/wp-content/uploads/2023/12/kapture-cx.svg" alt="Logo" class="logo-img">
         <span class="topbar-brand">Kapture CX</span>
         <span class="topbar-sub">Client Transition Portal</span>
+
+        <!-- Signed-in user info -->
         <div class="topbar-user">
             <div class="user-avatar-placeholder" id="user-initials">?</div>
             <span class="user-name" id="user-display-name">—</span>
             <button class="signout-btn" onclick="signOut()">Sign Out</button>
         </div>
     </div>
+
     <div class="main">
         <div class="page-header">
             <div class="page-title">Project <em>Handover</em> Schedule</div>
@@ -111,6 +221,10 @@
 </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════
+     BOOKING MODAL
+═══════════════════════════════════════════ -->
 <div class="modal-overlay" id="modal-overlay">
     <div class="modal">
         <div class="modal-header">
@@ -121,60 +235,96 @@
             <button style="background:none;border:none;color:#fff;cursor:pointer;" onclick="closeModal()">✕</button>
         </div>
         <div class="modal-body">
-            <div style="font-size: 11px; color: #888; margin-bottom: 15px;">Fields marked <span class="required-star">*</span> are mandatory</div>
-            <div class="field"><label>Name of Person <span class="required-star">*</span></label><input type="text" id="f-name" readonly></div>
-            <div class="field"><label>Email Address <span class="required-star">*</span></label><input type="email" id="f-email" readonly></div>
-            <div class="field"><label>Project Name <span class="required-star">*</span></label><input type="text" id="f-project" placeholder="e.g. CRM Migration"></div>
-            <div class="field"><label>Client Name <span class="required-star">*</span></label><input type="text" id="f-client"></div>
-            <div class="field"><label>Handover Checklist (Link) <span class="required-star">*</span></label><input type="text" id="f-checklist" placeholder="Paste link here..."></div>
+            <!-- Name & email are pre-filled and locked to the signed-in user -->
+            <div class="field">
+                <label>Name of Person <span style="color:#1e9e6e;font-size:9px;">(from your account)</span></label>
+                <input type="text" id="f-name" readonly>
+            </div>
+            <div class="field">
+                <label>Email Address <span style="color:#1e9e6e;font-size:9px;">(from your account)</span></label>
+                <input type="email" id="f-email" readonly>
+            </div>
+            <div class="field"><label>Project Name</label><input type="text" id="f-project"></div>
+            <div class="field"><label>Client Name</label><input type="text" id="f-client"></div>
+            <div class="field"><label>Handover Checklist (Link)</label><input type="text" id="f-checklist" placeholder="Paste link here..."></div>
             <div class="field"><label>Remarks</label><input type="text" id="f-remarks"></div>
         </div>
         <div class="modal-footer">
-            <button class="confirm-btn" id="confirm-btn" onclick="confirmBooking()">Confirm Booking →</button>
+            <button class="confirm-btn" onclick="confirmBooking()">Confirm Booking →</button>
         </div>
     </div>
 </div>
 
+
 <script>
+// ─────────────────────────────────────────────────────────────
+//  CONFIG — replace with your Apps Script URL
+// ─────────────────────────────────────────────────────────────
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcM8VXSILNLlMm-uPkhMZ2GwpBf2CopLFdfjR-5eMcnITdXCId1maWJdV1rPgF9Goc/exec";
-const ADMIN_EMAIL = "shivendra.singh@kapturecrm.com"; 
 
-let currentUser = null; 
-const SLOTS = [{s:'1:00 PM', e:'1:30 PM'}, {s:'1:30 PM', e:'2:00 PM'}];
-let weekOffset = 0, bookings = {}, allRows = [], pendingKey = null;
-const MONTH_MAP = { "JAN":0,"FEB":1,"MAR":2,"APR":3,"MAY":4,"JUN":5,"JUL":6,"AUG":7,"SEP":8,"OCT":9,"NOV":10,"DEC":11 };
+// ─────────────────────────────────────────────────────────────
+//  SIGNED-IN USER (populated after Google login)
+// ─────────────────────────────────────────────────────────────
+let currentUser = null; // { name, email, picture }
 
+/**
+ * Called by Google Sign-In SDK with a JWT credential.
+ * Decodes the payload (base64), sets currentUser, shows portal.
+ */
 function handleGoogleLogin(response) {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    currentUser = { name: payload.name || payload.email, email: payload.email, picture: payload.picture || null };
+    currentUser = {
+        name   : payload.name  || payload.email,
+        email  : payload.email,
+        picture: payload.picture || null
+    };
     showPortal();
 }
 
 function showPortal() {
-    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display  = 'none';
     document.getElementById('portal-screen').style.display = 'block';
+
+    // Populate topbar
     const initials = currentUser.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-    document.getElementById('user-initials').textContent = initials;
+    document.getElementById('user-initials').textContent     = initials;
     document.getElementById('user-display-name').textContent = currentUser.name;
+
     if (currentUser.picture) {
-        document.getElementById('user-initials').outerHTML = `<img src="${currentUser.picture}" class="user-avatar" id="user-initials" referrerpolicy="no-referrer">`;
+        const el = document.getElementById('user-initials');
+        el.outerHTML = `<img src="${currentUser.picture}" class="user-avatar" id="user-initials" referrerpolicy="no-referrer">`;
     }
+
     fetchLive();
 }
 
 function signOut() {
-    if (typeof google !== 'undefined' && google.accounts) { google.accounts.id.disableAutoSelect(); }
+    if (typeof google !== 'undefined' && google.accounts) {
+        google.accounts.id.disableAutoSelect();
+    }
     currentUser = null;
-    location.reload();
+    document.getElementById('portal-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display  = 'flex';
 }
+
+// ─────────────────────────────────────────────────────────────
+//  PORTAL LOGIC (unchanged from original, with audit additions)
+// ─────────────────────────────────────────────────────────────
+const SLOTS = [{s:'1:00 PM', e:'1:30 PM'}, {s:'1:30 PM', e:'2:00 PM'}];
+let weekOffset = 0, bookings = {}, allRows = [], pendingKey = null;
+
+const MONTH_MAP = {
+    "JAN":0,"FEB":1,"MAR":2,"APR":3,"MAY":4,"JUN":5,
+    "JUL":6,"AUG":7,"SEP":8,"OCT":9,"NOV":10,"DEC":11
+};
 
 function parseSheetDate(dStr) {
     if (!dStr) return null;
     const parts = String(dStr).trim().toUpperCase().split(/\s+/);
     if (parts.length !== 3) return null;
-    const day = parseInt(parts[0], 10);
+    const day   = parseInt(parts[0], 10);
     const month = MONTH_MAP[parts[1]];
-    const year = parseInt(parts[2], 10);
+    const year  = parseInt(parts[2], 10);
     if (isNaN(day) || month === undefined || isNaN(year)) return null;
     const d = new Date(year, month, day);
     d.setHours(0, 0, 0, 0);
@@ -191,13 +341,22 @@ function getWeekDays(o) {
     return {tue, thu, mon};
 }
 
-function fmtDate(d) { return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase(); }
+function fmtDate(d) {
+    return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase();
+}
+
 function skey(dk, i) { return `w${weekOffset}_${dk}_${i}`; }
 
 function isBookingOpen(slotDate, dk) {
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    let deadline = new Date(slotDate);
-    deadline.setDate(slotDate.getDate() - (dk === 'tue' ? 5 : 3));
+    let deadline;
+    if (dk === 'tue') {
+        deadline = new Date(slotDate);
+        deadline.setDate(slotDate.getDate() - 5);
+    } else {
+        deadline = new Date(slotDate);
+        deadline.setDate(slotDate.getDate() - 3);
+    }
     deadline.setHours(0, 0, 0, 0);
     return today <= deadline;
 }
@@ -208,131 +367,216 @@ async function fetchLive() {
         const d = await r.json();
         if (d.success) {
             bookings = d.bookings || {};
-            allRows = d.allRows || [];
+            allRows  = d.allRows  || [];
             render();
         }
-    } catch (e) { render(); }
+    } catch (e) {
+        console.error(e);
+        render();
+    }
 }
 
 function render() {
     const {tue, thu, mon} = getWeekDays(weekOffset);
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    document.getElementById('week-chip').textContent = 'WEEK OF ' + mon.toLocaleDateString('en-GB', {day:'numeric', month:'short'}).toUpperCase();
+
+    document.getElementById('week-chip').textContent =
+        'WEEK OF ' + mon.toLocaleDateString('en-GB', {day:'numeric', month:'short'}).toUpperCase();
+
     const grid = document.getElementById('days-grid');
     grid.innerHTML = '';
 
     [{l:'Tuesday', d:tue, dk:'tue'}, {l:'Thursday', d:thu, dk:'thu'}].forEach(day => {
-        const isPast = day.d < today;
+        const isPast      = day.d < today;
         const bookingOpen = isBookingOpen(day.d, day.dk);
+
         let slotsHtml = SLOTS.map((s, i) => {
             const k = skey(day.dk, i);
             const b = bookings[k];
+
             if (b) {
-                const isOwnerOrAdmin = currentUser && (
-                    (b.bookedByEmail && b.bookedByEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
-                    (currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase())
-                );
-                const displayName = b.bookedByName || b.bookedByEmail || 'Unknown';
-                const bookedByLabel = `<div class="booked-by">by ${displayName}</div>`;
-                let actionBtn = isOwnerOrAdmin ? `<button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button>` : `<div class="locked-badge" title="Only the owner or admin can cancel">🔒</div>`;
-                return `<div class="slot-row"><span>${s.s} – ${s.e}</span><div style="display:flex;align-items:center;gap:8px;">${bookedByLabel}<div class="booked-badge">Booked</div>${actionBtn}</div></div>`;
+                const withinDeadline = !isPast && bookingOpen;
+
+                // Strict ownership: must be logged in AND email must match exactly
+                const isOwner = currentUser && b.bookedByEmail &&
+                                b.bookedByEmail.toLowerCase() === currentUser.email.toLowerCase();
+
+                // "by [name]" label — show for everyone so it's clear who owns it
+                const displayName  = b.bookedByName  || b.bookedByEmail || 'Unknown';
+                const displayEmail = b.bookedByEmail || '';
+                const bookedByLabel = `<div class="booked-by" title="${displayEmail}">by ${displayName}</div>`;
+
+                let actionBtn = '';
+                if (withinDeadline) {
+                    if (isOwner) {
+                        // Owner → show active Cancel button
+                        actionBtn = `<button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button>`;
+                    } else {
+                        // Not the owner → show locked indicator with tooltip
+                        const tip = displayEmail
+                            ? `Only ${displayName} can cancel this slot`
+                            : `Sign-in required to cancel this slot`;
+                        actionBtn = `<div class="locked-badge" title="${tip}">🔒</div>`;
+                    }
+                }
+
+                return `<div class="slot-row">
+                    <span>${s.s} – ${s.e}</span>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        ${bookedByLabel}
+                        <div class="booked-badge">Booked</div>${actionBtn}
+                    </div>
+                </div>`;
             }
+
             if (isPast || !bookingOpen) {
-                return `<div class="slot-row" style="opacity:0.6;"><span>${s.s} – ${s.e}</span><div class="closed-badge">${isPast ? 'Closed' : 'Deadline'}</div></div>`;
+                const label = isPast ? 'Closed' : 'Deadline Passed';
+                return `<div class="slot-row" style="opacity:0.6;">
+                    <span>${s.s} – ${s.e}</span>
+                    <div class="closed-badge">${label}</div>
+                </div>`;
             }
-            return `<div class="slot-row"><span>${s.s} – ${s.e}</span><button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')"><span class="avail-label">Available</span><span class="avail-plus">+</span></button></div>`;
+
+            return `<div class="slot-row">
+                <span>${s.s} – ${s.e}</span>
+                <button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')">
+                    <span class="avail-label">Available</span><span class="avail-plus">+</span>
+                </button>
+            </div>`;
         }).join('');
-        grid.innerHTML += `<div class="day-card"><div class="day-header"><div>${day.l}<br><small style="color:#aaa;font-size:10px;">${fmtDate(day.d)}</small></div></div><div>${slotsHtml}</div></div>`;
+
+        grid.innerHTML += `<div class="day-card">
+            <div class="day-header">
+                <div>${day.l}<br>
+                <small style="color:#aaa;font-size:10px;">${fmtDate(day.d)}</small></div>
+            </div>
+            <div>${slotsHtml}</div>
+        </div>`;
     });
+
     renderTable();
 }
 
 function renderTable() {
-    const wrap = document.getElementById('bookings-wrap');
+    const wrap  = document.getElementById('bookings-wrap');
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const upcoming = allRows.map(b => ({ ...b, _sortDate: parseSheetDate(b.date) })).filter(b => b._sortDate && b._sortDate >= today).sort((a, b) => a._sortDate - b._sortDate);
+
+    const upcoming = allRows
+        .map(b => ({ ...b, _sortDate: parseSheetDate(b.date) }))
+        .filter(b => b._sortDate && b._sortDate >= today)
+        .sort((a, b) => a._sortDate - b._sortDate);
+
     if (!upcoming.length) {
-        wrap.innerHTML = `<div style="background:#fff;padding:20px;text-align:center;color:#aaa;font-size:12px;">No upcoming bookings found.</div>`;
+        wrap.innerHTML = `<div style="background:#fff;padding:20px;text-align:center;color:#aaa;font-size:12px;">
+            No upcoming bookings found.
+        </div>`;
         return;
     }
-    wrap.innerHTML = `<table class="bookings-table"><thead><tr><th>Date</th><th>Slot</th><th>Client</th><th>Project</th><th>Name</th><th>Booked By</th><th>Checklist</th></tr></thead><tbody>
-        ${upcoming.map(b => `<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client || '-'}</td><td>${b.project || '-'}</td><td>${b.name}</td><td><span class="audit-pill">${b.bookedByName || b.bookedByEmail}</span></td><td>${b.checklist ? `<a href="${b.checklist}" target="_blank" class="link-btn">View</a>` : '-'}</td></tr>`).join('')}
-    </tbody></table>`;
+
+    wrap.innerHTML = `
+        <table class="bookings-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Slot</th>
+                    <th>Client</th>
+                    <th>Project</th>
+                    <th>Name</th>
+                    <th>Booked By</th>
+                    <th>Checklist</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${upcoming.map(b => `
+                    <tr>
+                        <td>${b.date}</td>
+                        <td>${b.time}</td>
+                        <td>${b.client  || '-'}</td>
+                        <td>${b.project || '-'}</td>
+                        <td>${b.name}</td>
+                        <td>
+                            ${b.bookedByEmail
+                                ? `<span class="audit-pill" title="${b.bookedByEmail}">${b.bookedByName || b.bookedByEmail}</span>`
+                                : `<span style="color:#bbb">-</span>`}
+                        </td>
+                        <td>${b.checklist
+                            ? `<a href="${b.checklist}" target="_blank" class="link-btn">View Link</a>`
+                            : '-'}</td>
+                    </tr>`).join('')}
+            </tbody>
+        </table>`;
 }
 
 function openModal(dk, i, l) {
     pendingKey = {dk, i, l};
     document.getElementById('modal-sub').textContent = `${l} · ${SLOTS[i].s}`;
-    document.getElementById('f-name').value = currentUser ? currentUser.name : '';
+
+    // Pre-fill from signed-in user (readonly)
+    document.getElementById('f-name').value  = currentUser ? currentUser.name  : '';
     document.getElementById('f-email').value = currentUser ? currentUser.email : '';
-    ['project','client','remarks','checklist'].forEach(id => document.getElementById('f-' + id).value = '');
+
+    // Clear other fields
+    ['project','client','remarks','checklist'].forEach(id =>
+        document.getElementById('f-' + id).value = '');
+
     document.getElementById('modal-overlay').classList.add('open');
 }
 
-function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+}
 
 async function confirmBooking() {
-    const {tue, thu} = getWeekDays(weekOffset);
-    const targetKey = skey(pendingKey.dk, pendingKey.i);
-
-    if (bookings[targetKey]) {
-        alert("This slot was just booked by someone else.");
-        closeModal();
-        return;
-    }
-
     const data = {
-        name      : document.getElementById('f-name').value.trim(),
-        email     : document.getElementById('f-email').value.trim(),
-        project   : document.getElementById('f-project').value.trim(),
-        client    : document.getElementById('f-client').value.trim(),
-        remarks   : document.getElementById('f-remarks').value.trim(),
-        checklist : document.getElementById('f-checklist').value.trim(),
-        bookedByName  : currentUser ? currentUser.name : '',
-        bookedByEmail : currentUser ? currentUser.email : ''
+        name           : document.getElementById('f-name').value.trim(),
+        email          : document.getElementById('f-email').value.trim(),
+        project        : document.getElementById('f-project').value.trim(),
+        client         : document.getElementById('f-client').value.trim(),
+        remarks        : document.getElementById('f-remarks').value.trim(),
+        checklist      : document.getElementById('f-checklist').value.trim(),
+        // Audit fields — who actually clicked "Confirm Booking"
+        bookedByName   : currentUser ? currentUser.name  : '',
+        bookedByEmail  : currentUser ? currentUser.email : ''
     };
 
-    if (!data.name || !data.email || !data.project || !data.client || !data.checklist) {
-        return alert("Please fill in all mandatory fields marked with *");
-    }
+    if (!data.name)      return alert("Name of Person is required.");
+    if (!data.email)     return alert("Email Address is required.");
+    if (!data.project)   return alert("Project Name is required.");
+    if (!data.client)    return alert("Client Name is required.");
+    if (!data.checklist) return alert("Please paste the Handover Checklist link.");
 
-    const btn = document.getElementById('confirm-btn');
-    btn.disabled = true;
-    btn.textContent = "Processing...";
-
+    const {tue, thu} = getWeekDays(weekOffset);
     const payload = {
-        action: 'book',
-        slotKey: targetKey,
-        day: pendingKey.l,
-        date: fmtDate(pendingKey.dk === 'tue' ? tue : thu),
-        time: `${SLOTS[pendingKey.i].s} - ${SLOTS[pendingKey.i].e}`,
+        action   : 'book',
+        slotKey  : skey(pendingKey.dk, pendingKey.i),
+        day      : pendingKey.l,
+        date     : fmtDate(pendingKey.dk === 'tue' ? tue : thu),
+        time     : `${SLOTS[pendingKey.i].s} - ${SLOTS[pendingKey.i].e}`,
         ...data
     };
 
-    try {
-        const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)});
-        const result = await res.json();
-        if (result.success) { 
-            await fetchLive(); 
-            closeModal(); 
-        } else {
-            alert(result.message || "Booking failed.");
-        }
-    } catch (e) {
-        alert("Connection error.");
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "Confirm Booking →";
+    const res    = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)});
+    const result = await res.json();
+    if (result.success) {
+        fetchLive();
+        closeModal();
     }
 }
 
 async function handleCancel(dk, i) {
+    const k = skey(dk, i);
     if (!confirm("Cancel this booking?")) return;
-    const payload = { action: 'cancel', slotKey: skey(dk, i), cancelledByName : currentUser ? currentUser.name : '', cancelledByEmail: currentUser ? currentUser.email : '' };
-    const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)});
+    const payload = {
+        action          : 'cancel',
+        slotKey         : k,
+        cancelledByName : currentUser ? currentUser.name  : '',
+        cancelledByEmail: currentUser ? currentUser.email : ''
+    };
+    const res    = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)});
     const result = await res.json();
     if (result.success) { fetchLive(); }
 }
+
 function shiftWeek(d) { weekOffset += d; render(); }
 </script>
 </body>

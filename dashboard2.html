@@ -49,7 +49,7 @@
         .locked-badge{padding:5px 8px;font-size:13px;color:#ccc;cursor:default;border:1px solid #eee;background:#fafafa;border-radius:2px;}
         .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;align-items:center;justify-content:center;}
         .modal-overlay.open{display:flex;}
-        .modal{background:#fff;width:100%;max-width:420px;box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);}
+        .modal{background:#fff;width:100%;max-width:420px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);}
         .modal-header{background:#111;color:#fff;padding:18px 22px;display:flex;justify-content:space-between;}
         .modal-body{padding:22px;}
         .field{margin-bottom:15px;}
@@ -59,13 +59,16 @@
         .modal-footer{padding:0 22px 22px;display:flex;gap:10px;}
         .confirm-btn{flex:1;padding:12px;background:#111;color:#fff;border:none;font-size:12px;font-weight:600;text-transform:uppercase;cursor:pointer;}
         .confirm-btn:disabled{background:#666;cursor:not-allowed;}
-        .required-star { color: #cc1f2d; font-weight: bold; margin-left: 2px; }
-        .booked-by { font-size: 9px; color: #aaa; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+        .required-star{color:#cc1f2d;font-weight:bold;margin-left:2px;}
+        .booked-by{font-size:9px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;}
         .bookings-table{width:100%;border-collapse:collapse;font-size:11px;background:#fff;border:1px solid #ddd;}
         .bookings-table th{background:#111;color:#fff;padding:12px;text-align:left;text-transform:uppercase;font-size:9px;}
         .bookings-table td{padding:10px 12px;border-bottom:1px solid #f2f2f2;}
-        .link-btn {color: #cc1f2d; text-decoration: none; font-weight: bold;}
-        .audit-pill { display: inline-block; background: #f0f0f0; color: #666; font-size: 9px; padding: 2px 7px; border-radius: 20px; letter-spacing: .3px; }
+        .link-btn{color:#cc1f2d;text-decoration:none;font-weight:bold;}
+        .audit-pill{display:inline-block;background:#f0f0f0;color:#666;font-size:9px;padding:2px 7px;border-radius:20px;letter-spacing:.3px;}
+        #debug-panel{margin-top:30px;background:#1a1a1a;color:#00ff88;font-family:monospace;font-size:11px;padding:16px;border-radius:4px;}
+        #debug-panel h4{color:#fff;font-size:11px;margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;}
+        #debug-out{white-space:pre-wrap;word-break:break-all;line-height:1.6;}
     </style>
 </head>
 <body>
@@ -107,6 +110,12 @@
         <div class="days-grid" id="days-grid"></div>
         <div style="font-size:13px;font-weight:600;margin-bottom:10px;text-transform:uppercase;color:#444;">Upcoming Booking Details</div>
         <div id="bookings-wrap"></div>
+
+        <!-- TEMPORARY DEBUG PANEL — share output in chat, then remove this block -->
+        <div id="debug-panel">
+            <h4>🛠 Debug — copy the text below and paste in chat</h4>
+            <pre id="debug-out">Waiting for API response...</pre>
+        </div>
     </div>
 </div>
 </div>
@@ -121,7 +130,7 @@
             <button style="background:none;border:none;color:#fff;cursor:pointer;" onclick="closeModal()">✕</button>
         </div>
         <div class="modal-body">
-            <div style="font-size: 11px; color: #888; margin-bottom: 15px;">Fields marked <span class="required-star">*</span> are mandatory</div>
+            <div style="font-size:11px;color:#888;margin-bottom:15px;">Fields marked <span class="required-star">*</span> are mandatory</div>
             <div class="field"><label>Name of Person <span class="required-star">*</span></label><input type="text" id="f-name" readonly></div>
             <div class="field"><label>Email Address <span class="required-star">*</span></label><input type="email" id="f-email" readonly></div>
             <div class="field"><label>Project Name <span class="required-star">*</span></label><input type="text" id="f-project" placeholder="e.g. CRM Migration"></div>
@@ -136,15 +145,13 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPmo2QqDxc6Fxta84HLZtlpy_3cFBLCrPc5BEUoJ0lloXu-kxGWYHQUBBj01ajXVZW/exec";
+const SCRIPT_URL  = "https://script.google.com/macros/s/AKfycbyPmo2QqDxc6Fxta84HLZtlpy_3cFBLCrPc5BEUoJ0lloXu-kxGWYHQUBBj01ajXVZW/exec";
 const ADMIN_EMAIL = "shivendra.singh@kapturecrm.com";
 
 let currentUser = null;
-const SLOTS = [{s:'1:00 PM', e:'1:30 PM'}, {s:'1:30 PM', e:'2:00 PM'}];
-let weekOffset = 0, bookings = {}, allRows = [], pendingKey = null;
-
-// FIX: Month map for parseSheetDate
-const MONTH_MAP = { "JAN":0,"FEB":1,"MAR":2,"APR":3,"MAY":4,"JUN":5,"JUL":6,"AUG":7,"SEP":8,"OCT":9,"NOV":10,"DEC":11 };
+const SLOTS     = [{s:'1:00 PM', e:'1:30 PM'}, {s:'1:30 PM', e:'2:00 PM'}];
+let weekOffset  = 0, bookings = {}, allRows = [], pendingKey = null;
+const MONTH_MAP = {"JAN":0,"FEB":1,"MAR":2,"APR":3,"MAY":4,"JUN":5,"JUL":6,"AUG":7,"SEP":8,"OCT":9,"NOV":10,"DEC":11};
 
 function handleGoogleLogin(response) {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
@@ -159,131 +166,107 @@ function showPortal() {
     document.getElementById('user-initials').textContent = initials;
     document.getElementById('user-display-name').textContent = currentUser.name;
     if (currentUser.picture) {
-        document.getElementById('user-initials').outerHTML = `<img src="${currentUser.picture}" class="user-avatar" id="user-initials" referrerpolicy="no-referrer">`;
+        document.getElementById('user-initials').outerHTML =
+            `<img src="${currentUser.picture}" class="user-avatar" id="user-initials" referrerpolicy="no-referrer">`;
     }
     fetchLive();
 }
 
 function signOut() {
-    if (typeof google !== 'undefined' && google.accounts) { google.accounts.id.disableAutoSelect(); }
+    if (typeof google !== 'undefined' && google.accounts) google.accounts.id.disableAutoSelect();
     currentUser = null;
     location.reload();
 }
 
-/**
- * FIX: Parses "21 APR 2026" reliably into a Date object.
- * Handles both uppercase and mixed-case month names.
- */
+// Always "DD MMM YYYY" uppercase, e.g. "21 APR 2026"
+function fmtDate(d) {
+    const M = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    return `${String(d.getDate()).padStart(2,'0')} ${M[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 function parseSheetDate(dStr) {
     if (!dStr) return null;
     const parts = String(dStr).trim().toUpperCase().split(/\s+/);
     if (parts.length !== 3) return null;
-    const day   = parseInt(parts[0], 10);
-    const month = MONTH_MAP[parts[1]];
-    const year  = parseInt(parts[2], 10);
+    const day = parseInt(parts[0], 10), month = MONTH_MAP[parts[1]], year = parseInt(parts[2], 10);
     if (isNaN(day) || month === undefined || isNaN(year)) return null;
-    const d = new Date(year, month, day);
-    d.setHours(0, 0, 0, 0);
-    return d;
+    const d = new Date(year, month, day); d.setHours(0,0,0,0); return d;
 }
 
+// e.g. "21_APR_2026_0" — must match Apps Script makeSlotKey()
+function skey(dateObj, i) { return fmtDate(dateObj).replace(/ /g,'_') + '_' + i; }
+
 function getWeekDays(o) {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) + (o * 7);
+    const now = new Date(), dow = now.getDay();
+    const diff = now.getDate() - dow + (dow === 0 ? -6 : 1) + (o * 7);
     const mon = new Date(now.setDate(diff));
     const tue = new Date(mon); tue.setDate(mon.getDate() + 1);
     const thu = new Date(mon); thu.setDate(mon.getDate() + 3);
     return {tue, thu, mon};
 }
 
-/**
- * FIX: fmtDate always returns "DD MMM YYYY" in UPPERCASE e.g. "21 APR 2026"
- * Uses explicit month array to avoid any locale inconsistency.
- */
-function fmtDate(d) {
-    const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-    const day   = String(d.getDate()).padStart(2, '0');
-    const month = MONTHS[d.getMonth()];
-    const year  = d.getFullYear();
-    return `${day} ${month} ${year}`;
-}
-
-/**
- * FIX: skey generates keys like "21_APR_2026_0" — always uppercase, always consistent.
- * This must match the Apps Script's makeSlotKey() exactly.
- */
-function skey(dateObj, i) {
-    return fmtDate(dateObj).replace(/ /g, '_') + '_' + i;
-}
-
 function isBookingOpen(slotDate, dk) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let deadline = new Date(slotDate);
-    if (dk === 'tue') {
-        deadline.setDate(slotDate.getDate() - 4); // Tuesday - 4 = Friday before
-    } else {
-        deadline.setDate(slotDate.getDate() - 2); // Thursday - 2 = Tuesday before
-    }
-    deadline.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const deadline = new Date(slotDate);
+    deadline.setDate(slotDate.getDate() - (dk === 'tue' ? 4 : 2));
+    deadline.setHours(0,0,0,0);
     return today < deadline;
 }
 
 async function fetchLive() {
+    const dbg = document.getElementById('debug-out');
     try {
         const r = await fetch(`${SCRIPT_URL}?action=fetch&t=${Date.now()}`);
         const d = await r.json();
+
+        const {tue, thu} = getWeekDays(weekOffset);
+        const info = {
+            "apiSuccess"      : d.success,
+            "rawBookingKeys"  : Object.keys(d.bookings || {}),
+            "allRowsDates"    : (d.allRows || []).map(x => ({date: x.date, key: x.slotKey})),
+            "frontendKeysTue" : [skey(tue,0), skey(tue,1)],
+            "frontendKeysThu" : [skey(thu,0), skey(thu,1)],
+            "today"           : new Date().toISOString()
+        };
+        if (dbg) dbg.textContent = JSON.stringify(info, null, 2);
+
         if (d.success) {
-            // FIX: Normalise all incoming booking keys to UPPERCASE
-            // so they match the keys generated by skey() on the frontend.
-            const normalizedBookings = {};
-            Object.keys(d.bookings || {}).forEach(k => {
-                normalizedBookings[k.toUpperCase()] = d.bookings[k];
-            });
-            bookings = normalizedBookings;
+            const norm = {};
+            Object.keys(d.bookings || {}).forEach(k => { norm[k.toUpperCase()] = d.bookings[k]; });
+            bookings = norm;
             allRows  = d.allRows || [];
             render();
         }
     } catch (e) {
-        console.error("fetchLive error:", e);
+        if (dbg) dbg.textContent = "FETCH ERROR: " + e.toString();
         render();
     }
 }
 
 function render() {
     const {tue, thu, mon} = getWeekDays(weekOffset);
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    document.getElementById('week-chip').textContent = 'WEEK OF ' + mon.toLocaleDateString('en-GB', {day:'numeric', month:'short'}).toUpperCase();
+    const today = new Date(); today.setHours(0,0,0,0);
+    document.getElementById('week-chip').textContent =
+        'WEEK OF ' + mon.toLocaleDateString('en-GB',{day:'numeric',month:'short'}).toUpperCase();
     const grid = document.getElementById('days-grid');
     grid.innerHTML = '';
 
-    [{l:'Tuesday', d:tue, dk:'tue'}, {l:'Thursday', d:thu, dk:'thu'}].forEach(day => {
-        const isPast = day.d < today;
-        const bookingOpen = isBookingOpen(day.d, day.dk);
-        let slotsHtml = SLOTS.map((s, i) => {
-            const k = skey(day.d, i);
-            const b = bookings[k];
-
+    [{l:'Tuesday',d:tue,dk:'tue'},{l:'Thursday',d:thu,dk:'thu'}].forEach(day => {
+        const isPast = day.d < today, bookingOpen = isBookingOpen(day.d, day.dk);
+        const slotsHtml = SLOTS.map((s, i) => {
+            const k = skey(day.d, i), b = bookings[k];
             if (b) {
-                const isOwnerOrAdmin = currentUser && (
+                const mine = currentUser && (
                     (b.bookedByEmail && b.bookedByEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
-                    (currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase())
-                );
-                const displayName = b.bookedByName || b.bookedByEmail || 'Unknown';
-                const bookedByLabel = `<div class="booked-by">by ${displayName}</div>`;
-                // FIX: pass the timestamp so handleCancel can reconstruct the date correctly
-                let actionBtn = isOwnerOrAdmin
+                    currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+                const lbl = `<div class="booked-by">by ${b.bookedByName || b.bookedByEmail || 'Unknown'}</div>`;
+                const btn = mine
                     ? `<button class="cancel-btn" onclick="handleCancel(${day.d.getTime()},${i})">Cancel</button>`
-                    : `<div class="locked-badge" title="Only the owner or admin can cancel">🔒</div>`;
-                return `<div class="slot-row"><span>${s.s} – ${s.e}</span><div style="display:flex;align-items:center;gap:8px;">${bookedByLabel}<div class="booked-badge">Booked</div>${actionBtn}</div></div>`;
+                    : `<div class="locked-badge" title="Only owner/admin can cancel">🔒</div>`;
+                return `<div class="slot-row"><span>${s.s} – ${s.e}</span><div style="display:flex;align-items:center;gap:8px;">${lbl}<div class="booked-badge">Booked</div>${btn}</div></div>`;
             }
-
-            if (isPast || !bookingOpen) {
+            if (isPast || !bookingOpen)
                 return `<div class="slot-row" style="opacity:0.6;"><span>${s.s} – ${s.e}</span><div class="closed-badge">Booking Closed</div></div>`;
-            }
-
-            // FIX: pass timestamp (not raw Date object) to avoid string coercion issues
             return `<div class="slot-row"><span>${s.s} – ${s.e}</span><button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}',${day.d.getTime()})"><span class="avail-label">Available</span><span class="avail-plus">+</span></button></div>`;
         }).join('');
         grid.innerHTML += `<div class="day-card"><div class="day-header"><div>${day.l}<br><small style="color:#aaa;font-size:10px;">${fmtDate(day.d)}</small></div></div><div>${slotsHtml}</div></div>`;
@@ -293,31 +276,24 @@ function render() {
 
 function renderTable() {
     const wrap = document.getElementById('bookings-wrap');
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-
-    // FIX: parseSheetDate now reliably handles "21 APR 2026" (uppercase from Apps Script)
-    const upcoming = allRows
-        .map(b => ({ ...b, _sortDate: parseSheetDate(b.date) }))
-        .filter(b => b._sortDate && b._sortDate >= today)
-        .sort((a, b) => a._sortDate - b._sortDate);
-
+    const today = new Date(); today.setHours(0,0,0,0);
+    const upcoming = allRows.map(b => ({...b, _d: parseSheetDate(b.date)}))
+        .filter(b => b._d && b._d >= today).sort((a,b) => a._d - b._d);
     if (!upcoming.length) {
         wrap.innerHTML = `<div style="background:#fff;padding:20px;text-align:center;color:#aaa;font-size:12px;">No upcoming bookings found.</div>`;
         return;
     }
     wrap.innerHTML = `<table class="bookings-table"><thead><tr><th>Date</th><th>Slot</th><th>Client</th><th>Project</th><th>Name</th><th>Booked By</th><th>Checklist</th></tr></thead><tbody>
-        ${upcoming.map(b => `<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client || '-'}</td><td>${b.project || '-'}</td><td>${b.name}</td><td><span class="audit-pill">${b.bookedByName || b.bookedByEmail}</span></td><td>${b.checklist ? `<a href="${b.checklist}" target="_blank" class="link-btn">View</a>` : '-'}</td></tr>`).join('')}
+        ${upcoming.map(b=>`<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client||'-'}</td><td>${b.project||'-'}</td><td>${b.name}</td><td><span class="audit-pill">${b.bookedByName||b.bookedByEmail}</span></td><td>${b.checklist?`<a href="${b.checklist}" target="_blank" class="link-btn">View</a>`:'-'}</td></tr>`).join('')}
     </tbody></table>`;
 }
 
-// FIX: openModal now receives a timestamp (number) instead of a Date object
 function openModal(dk, i, l, timestamp) {
-    const realDate = new Date(timestamp);
-    pendingKey = {dk, i, l, date: realDate};
+    pendingKey = {dk, i, l, date: new Date(timestamp)};
     document.getElementById('modal-sub').textContent = `${l} · ${SLOTS[i].s}`;
     document.getElementById('f-name').value  = currentUser ? currentUser.name  : '';
     document.getElementById('f-email').value = currentUser ? currentUser.email : '';
-    ['project','client','remarks','checklist'].forEach(id => document.getElementById('f-' + id).value = '');
+    ['project','client','remarks','checklist'].forEach(id => document.getElementById('f-'+id).value = '');
     document.getElementById('modal-overlay').classList.add('open');
 }
 
@@ -325,76 +301,46 @@ function closeModal() { document.getElementById('modal-overlay').classList.remov
 
 async function confirmBooking() {
     const targetKey = skey(pendingKey.date, pendingKey.i);
-
-    if (bookings[targetKey]) {
-        alert("This slot was just booked by someone else.");
-        closeModal();
-        return;
-    }
-
+    if (bookings[targetKey]) { alert("This slot was just booked by someone else."); closeModal(); return; }
     const data = {
-        name      : document.getElementById('f-name').value.trim(),
-        email     : document.getElementById('f-email').value.trim(),
-        project   : document.getElementById('f-project').value.trim(),
-        client    : document.getElementById('f-client').value.trim(),
-        remarks   : document.getElementById('f-remarks').value.trim(),
-        checklist : document.getElementById('f-checklist').value.trim(),
-        bookedByName  : currentUser ? currentUser.name  : '',
-        bookedByEmail : currentUser ? currentUser.email : ''
+        name: document.getElementById('f-name').value.trim(),
+        email: document.getElementById('f-email').value.trim(),
+        project: document.getElementById('f-project').value.trim(),
+        client: document.getElementById('f-client').value.trim(),
+        remarks: document.getElementById('f-remarks').value.trim(),
+        checklist: document.getElementById('f-checklist').value.trim(),
+        bookedByName: currentUser ? currentUser.name : '',
+        bookedByEmail: currentUser ? currentUser.email : ''
     };
-
-    if (!data.name || !data.email || !data.project || !data.client || !data.checklist) {
+    if (!data.name || !data.email || !data.project || !data.client || !data.checklist)
         return alert("Please fill in all mandatory fields marked with *");
-    }
-
     const btn = document.getElementById('confirm-btn');
-    btn.disabled = true;
-    btn.textContent = "Processing...";
-
-    const payload = {
-        action   : 'book',
-        slotKey  : targetKey,
-        day      : pendingKey.l,
-        date     : fmtDate(pendingKey.date),   // "21 APR 2026" — matches Apps Script normaliseDate
-        time     : `${SLOTS[pendingKey.i].s} - ${SLOTS[pendingKey.i].e}`,
-        ...data
-    };
-
+    btn.disabled = true; btn.textContent = "Processing...";
     try {
-        const res    = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)});
+        const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({
+            action:'book', slotKey:targetKey, day:pendingKey.l,
+            date:fmtDate(pendingKey.date), time:`${SLOTS[pendingKey.i].s} - ${SLOTS[pendingKey.i].e}`, ...data
+        })});
         const result = await res.json();
-        if (result.success) {
-            await fetchLive();
-            closeModal();
-        } else {
-            alert(result.message || "Booking failed.");
-        }
-    } catch (e) {
-        alert("Connection error.");
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "Confirm Booking →";
-    }
+        if (result.success) { await fetchLive(); closeModal(); }
+        else alert(result.message || "Booking failed.");
+    } catch(e) { alert("Connection error: " + e.toString()); }
+    finally { btn.disabled = false; btn.textContent = "Confirm Booking →"; }
 }
 
-// FIX: handleCancel now receives a timestamp (number) for reliable Date reconstruction
 async function handleCancel(timestamp, i) {
     if (!confirm("Cancel this booking?")) return;
     const dateObj = new Date(timestamp);
-    const payload = {
-        action            : 'cancel',
-        slotKey           : skey(dateObj, i),
-        cancelledByName   : currentUser ? currentUser.name  : '',
-        cancelledByEmail  : currentUser ? currentUser.email : ''
-    };
     try {
-        const res    = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)});
+        const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({
+            action:'cancel', slotKey:skey(dateObj,i),
+            cancelledByName: currentUser ? currentUser.name : '',
+            cancelledByEmail: currentUser ? currentUser.email : ''
+        })});
         const result = await res.json();
-        if (result.success) { fetchLive(); }
-        else { alert(result.message || "Cancellation failed."); }
-    } catch (e) {
-        alert("Connection error.");
-    }
+        if (result.success) fetchLive();
+        else alert(result.message || "Cancellation failed.");
+    } catch(e) { alert("Connection error: " + e.toString()); }
 }
 
 function shiftWeek(d) { weekOffset += d; render(); }

@@ -170,13 +170,23 @@ function signOut() {
 
 function parseSheetDate(dStr) {
     if (!dStr) return null;
-    const parts = String(dStr).trim().toUpperCase().split(/\s+/);
-    if (parts.length !== 3) return null;
-    const day = parseInt(parts[0], 10);
-    const month = MONTH_MAP[parts[1]];
-    const year = parseInt(parts[2], 10);
-    if (isNaN(day) || month === undefined || isNaN(year)) return null;
-    const d = new Date(year, month, day);
+    
+    // Try standard JS parsing first
+    let d = new Date(dStr);
+    
+    // If that fails, try your custom "DD MMM YYYY" logic
+    if (isNaN(d.getTime())) {
+        const parts = String(dStr).trim().toUpperCase().split(/\s+/);
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = MONTH_MAP[parts[1]];
+            const year = parseInt(parts[2], 10);
+            d = new Date(year, month, day);
+        }
+    }
+
+    if (isNaN(d.getTime())) return null;
+    
     d.setHours(0, 0, 0, 0);
     return d;
 }
@@ -249,8 +259,17 @@ function render() {
 
 function renderTable() {
     const wrap = document.getElementById('bookings-wrap');
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const upcoming = allRows.map(b => ({ ...b, _sortDate: parseSheetDate(b.date) })).filter(b => b._sortDate && b._sortDate >= today).sort((a, b) => a._sortDate - b._sortDate);
+    const today = new Date(); 
+    today.setHours(0, 0, 0, 0);
+
+    console.log("All Rows from Sheet:", allRows); // CHECK YOUR CONSOLE
+
+    const upcoming = allRows.map(b => {
+        const pDate = parseSheetDate(b.date);
+        console.log(`Parsing "${b.date}" ->`, pDate); // CHECK IF THIS IS NULL
+        return { ...b, _sortDate: pDate };
+    }).filter(b => b._sortDate && b._sortDate >= today)
+      .sort((a, b) => a._sortDate - b._sortDate);
     if (!upcoming.length) {
         wrap.innerHTML = `<div style="background:#fff;padding:20px;text-align:center;color:#aaa;font-size:12px;">No upcoming bookings found.</div>`;
         return;

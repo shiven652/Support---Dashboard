@@ -406,7 +406,10 @@ function getWeekDays(o) {
 
 function fmtDate(d) { return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase(); }
 
-function skey(dk, i) { return `w${weekOffset}_${dk}_${i}`; }
+function skey(dateObj, i) {
+  const dateStr = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+  return `${dateStr}_${SLOTS[i].s}_${SLOTS[i].e}`;
+}
 
 
 
@@ -472,7 +475,7 @@ function render() {
 
         let slotsHtml = SLOTS.map((s, i) => {
 
-            const k = skey(day.dk, i);
+            const k = skey(day.d, i);
 
             const b = bookings[k];
 
@@ -585,8 +588,9 @@ function closeModal() { document.getElementById('modal-overlay').classList.remov
 async function confirmBooking() {
 
     const {tue, thu} = getWeekDays(weekOffset);
+const actualDate = pendingKey.dk === 'tue' ? tue : thu;
 
-    const targetKey = skey(pendingKey.dk, pendingKey.i);
+const targetKey = skey(actualDate, pendingKey.i);
 
 
 
@@ -694,16 +698,28 @@ async function confirmBooking() {
 
 async function handleCancel(dk, i) {
 
-    if (!confirm("Cancel this booking?")) return;
+  if (!confirm("Cancel this booking?")) return;
 
-    const payload = { action: 'cancel', slotKey: skey(dk, i), cancelledByName : currentUser ? currentUser.name : '', cancelledByEmail: currentUser ? currentUser.email : '' };
+  const {tue, thu} = getWeekDays(weekOffset);
+  const actualDate = dk === 'tue' ? tue : thu;
 
-    const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)});
+  const payload = { 
+    action: 'cancel', 
+    slotKey: skey(actualDate, i),
+    cancelledByName: currentUser ? currentUser.name : '', 
+    cancelledByEmail: currentUser ? currentUser.email : '' 
+  };
 
-    const result = await res.json();
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
 
-    if (result.success) { fetchLive(); }
+  const result = await res.json();
 
+  if (result.success) {
+    fetchLive();
+  }
 }
 
 function shiftWeek(d) { weekOffset += d; render(); }

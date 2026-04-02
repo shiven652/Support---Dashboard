@@ -6,6 +6,7 @@
     <title>Kapture | Client Transition Portal</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
+        /* [Keeping your existing CSS styles exactly as they were] */
         *{box-sizing:border-box;margin:0;padding:0;}
         #login-screen { display: flex; min-height: 100vh; align-items: center; justify-content: center; background: #111; flex-direction: column; gap: 28px; }
         .login-box { background: #fff; padding: 44px 40px 36px; width: 100%; max-width: 380px; text-align: center; }
@@ -83,32 +84,32 @@
 </div>
 
 <div id="portal-screen">
-<div class="portal">
-    <div class="topbar">
-        <img src="https://testrigor.com/wp-content/uploads/2023/12/kapture-cx.svg" alt="Logo" class="logo-img">
-        <span class="topbar-brand">Kapture CX</span>
-        <span class="topbar-sub">Client Transition Portal</span>
-        <div class="topbar-user">
-            <div class="user-avatar-placeholder" id="user-initials">?</div>
-            <span class="user-name" id="user-display-name">—</span>
-            <button class="signout-btn" onclick="signOut()">Sign Out</button>
+    <div class="portal">
+        <div class="topbar">
+            <img src="https://testrigor.com/wp-content/uploads/2023/12/kapture-cx.svg" alt="Logo" class="logo-img">
+            <span class="topbar-brand">Kapture CX</span>
+            <span class="topbar-sub">Client Transition Portal</span>
+            <div class="topbar-user">
+                <div class="user-avatar-placeholder" id="user-initials">?</div>
+                <span class="user-name" id="user-display-name">—</span>
+                <button class="signout-btn" onclick="signOut()">Sign Out</button>
+            </div>
+        </div>
+        <div class="main">
+            <div class="page-header">
+                <div class="page-title">Project <em>Handover</em> Schedule</div>
+                <div class="recurrence"><strong>TUESDAYS & THURSDAYS</strong><br>1:00 PM – 2:00 PM</div>
+            </div>
+            <div class="controls">
+                <button class="nav-btn" onclick="shiftWeek(-1)">← Prev</button>
+                <div class="week-chip" id="week-chip">LOADING...</div>
+                <button class="nav-btn" onclick="shiftWeek(1)">Next →</button>
+            </div>
+            <div class="days-grid" id="days-grid"></div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px;text-transform:uppercase;color:#444;">Upcoming Booking Details</div>
+            <div id="bookings-wrap"></div>
         </div>
     </div>
-    <div class="main">
-        <div class="page-header">
-            <div class="page-title">Project <em>Handover</em> Schedule</div>
-            <div class="recurrence"><strong>TUESDAYS & THURSDAYS</strong><br>1:00 PM – 2:00 PM</div>
-        </div>
-        <div class="controls">
-            <button class="nav-btn" onclick="shiftWeek(-1)">← Prev</button>
-            <div class="week-chip" id="week-chip">LOADING...</div>
-            <button class="nav-btn" onclick="shiftWeek(1)">Next →</button>
-        </div>
-        <div class="days-grid" id="days-grid"></div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:10px;text-transform:uppercase;color:#444;">Upcoming Booking Details</div>
-        <div id="bookings-wrap"></div>
-    </div>
-</div>
 </div>
 
 <div class="modal-overlay" id="modal-overlay">
@@ -136,7 +137,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4GtxLG8kHUxavTEx5URZDU9O7zHAKG9tO-0Ge6NQDZGi61thoWHpD-HPy2YrYWExz/exec";
+const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE"; 
 const ADMIN_EMAIL = "shivendra.singh@kapturecrm.com"; 
 
 let currentUser = null; 
@@ -170,11 +171,7 @@ function signOut() {
 
 function parseSheetDate(dStr) {
     if (!dStr) return null;
-    
-    // Try standard JS parsing first
     let d = new Date(dStr);
-    
-    // If that fails, try your custom "DD MMM YYYY" logic
     if (isNaN(d.getTime())) {
         const parts = String(dStr).trim().toUpperCase().split(/\s+/);
         if (parts.length === 3) {
@@ -184,9 +181,7 @@ function parseSheetDate(dStr) {
             d = new Date(year, month, day);
         }
     }
-
     if (isNaN(d.getTime())) return null;
-    
     d.setHours(0, 0, 0, 0);
     return d;
 }
@@ -202,7 +197,12 @@ function getWeekDays(o) {
 }
 
 function fmtDate(d) { return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase(); }
-function skey(dk, i) { return `w${weekOffset}_${dk}_${i}`; }
+
+// FIX 1: Generate slotKey based on absolute date instead of relative week offset
+function skey(dateObj, i) { 
+    const dStr = dateObj.toISOString().split('T')[0]; 
+    return `${dStr}_${i}`; 
+}
 
 function isBookingOpen(slotDate, dk) {
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -235,7 +235,7 @@ function render() {
         const isPast = day.d < today;
         const bookingOpen = isBookingOpen(day.d, day.dk);
         let slotsHtml = SLOTS.map((s, i) => {
-            const k = skey(day.dk, i);
+            const k = skey(day.d, i); // Use absolute date key
             const b = bookings[k];
             if (b) {
                 const isOwnerOrAdmin = currentUser && (
@@ -244,13 +244,14 @@ function render() {
                 );
                 const displayName = b.bookedByName || b.bookedByEmail || 'Unknown';
                 const bookedByLabel = `<div class="booked-by">by ${displayName}</div>`;
-                let actionBtn = isOwnerOrAdmin ? `<button class="cancel-btn" onclick="handleCancel('${day.dk}',${i})">Cancel</button>` : `<div class="locked-badge" title="Only the owner or admin can cancel">🔒</div>`;
+                let actionBtn = isOwnerOrAdmin ? `<button class="cancel-btn" onclick="handleCancel('${day.d.toISOString()}',${i})">Cancel</button>` : `<div class="locked-badge" title="Only the owner or admin can cancel">🔒</div>`;
                 return `<div class="slot-row"><span>${s.s} – ${s.e}</span><div style="display:flex;align-items:center;gap:8px;">${bookedByLabel}<div class="booked-badge">Booked</div>${actionBtn}</div></div>`;
             }
             if (isPast || !bookingOpen) {
                 return `<div class="slot-row" style="opacity:0.6;"><span>${s.s} – ${s.e}</span><div class="closed-badge">${isPast ? 'Closed' : 'Deadline'}</div></div>`;
             }
-            return `<div class="slot-row"><span>${s.s} – ${s.e}</span><button class="avail-btn" onclick="openModal('${day.dk}',${i},'${day.l}')"><span class="avail-label">Available</span><span class="avail-plus">+</span></button></div>`;
+            // Pass ISO string of date to modal handler
+            return `<div class="slot-row"><span>${s.s} – ${s.e}</span><button class="avail-btn" onclick="openModal('${day.d.toISOString()}',${i},'${day.l}')"><span class="avail-label">Available</span><span class="avail-plus">+</span></button></div>`;
         }).join('');
         grid.innerHTML += `<div class="day-card"><div class="day-header"><div>${day.l}<br><small style="color:#aaa;font-size:10px;">${fmtDate(day.d)}</small></div></div><div>${slotsHtml}</div></div>`;
     });
@@ -259,14 +260,9 @@ function render() {
 
 function renderTable() {
     const wrap = document.getElementById('bookings-wrap');
-    const today = new Date(); 
-    today.setHours(0, 0, 0, 0);
-
-    console.log("All Rows from Sheet:", allRows); // CHECK YOUR CONSOLE
-
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     const upcoming = allRows.map(b => {
         const pDate = parseSheetDate(b.date);
-        console.log(`Parsing "${b.date}" ->`, pDate); // CHECK IF THIS IS NULL
         return { ...b, _sortDate: pDate };
     }).filter(b => b._sortDate && b._sortDate >= today)
       .sort((a, b) => a._sortDate - b._sortDate);
@@ -279,8 +275,9 @@ function renderTable() {
     </tbody></table>`;
 }
 
-function openModal(dk, i, l) {
-    pendingKey = {dk, i, l};
+function openModal(dateIso, i, l) {
+    const d = new Date(dateIso);
+    pendingKey = {d, i, l};
     document.getElementById('modal-sub').textContent = `${l} · ${SLOTS[i].s}`;
     document.getElementById('f-name').value = currentUser ? currentUser.name : '';
     document.getElementById('f-email').value = currentUser ? currentUser.email : '';
@@ -291,8 +288,7 @@ function openModal(dk, i, l) {
 function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 
 async function confirmBooking() {
-    const {tue, thu} = getWeekDays(weekOffset);
-    const targetKey = skey(pendingKey.dk, pendingKey.i);
+    const targetKey = skey(pendingKey.d, pendingKey.i);
 
     if (bookings[targetKey]) {
         alert("This slot was just booked by someone else.");
@@ -301,14 +297,14 @@ async function confirmBooking() {
     }
 
     const data = {
-        name      : document.getElementById('f-name').value.trim(),
-        email     : document.getElementById('f-email').value.trim(),
-        project   : document.getElementById('f-project').value.trim(),
-        client    : document.getElementById('f-client').value.trim(),
-        remarks   : document.getElementById('f-remarks').value.trim(),
-        checklist : document.getElementById('f-checklist').value.trim(),
-        bookedByName  : currentUser ? currentUser.name : '',
-        bookedByEmail : currentUser ? currentUser.email : ''
+        name: document.getElementById('f-name').value.trim(),
+        email: document.getElementById('f-email').value.trim(),
+        project: document.getElementById('f-project').value.trim(),
+        client: document.getElementById('f-client').value.trim(),
+        remarks: document.getElementById('f-remarks').value.trim(),
+        checklist: document.getElementById('f-checklist').value.trim(),
+        bookedByName: currentUser ? currentUser.name : '',
+        bookedByEmail: currentUser ? currentUser.email : ''
     };
 
     if (!data.name || !data.email || !data.project || !data.client || !data.checklist) {
@@ -323,7 +319,7 @@ async function confirmBooking() {
         action: 'book',
         slotKey: targetKey,
         day: pendingKey.l,
-        date: fmtDate(pendingKey.dk === 'tue' ? tue : thu),
+        date: fmtDate(pendingKey.d),
         time: `${SLOTS[pendingKey.i].s} - ${SLOTS[pendingKey.i].e}`,
         ...data
     };
@@ -337,17 +333,22 @@ async function confirmBooking() {
         } else {
             alert(result.message || "Booking failed.");
         }
-    } catch (e) {
-        alert("Connection error.");
-    } finally {
+    } catch (e) { alert("Connection error."); }
+    finally {
         btn.disabled = false;
         btn.textContent = "Confirm Booking →";
     }
 }
 
-async function handleCancel(dk, i) {
+async function handleCancel(dateIso, i) {
     if (!confirm("Cancel this booking?")) return;
-    const payload = { action: 'cancel', slotKey: skey(dk, i), cancelledByName : currentUser ? currentUser.name : '', cancelledByEmail: currentUser ? currentUser.email : '' };
+    const d = new Date(dateIso);
+    const payload = { 
+        action: 'cancel', 
+        slotKey: skey(d, i), 
+        cancelledByName : currentUser ? currentUser.name : '', 
+        cancelledByEmail: currentUser ? currentUser.email : '' 
+    };
     const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)});
     const result = await res.json();
     if (result.success) { fetchLive(); }

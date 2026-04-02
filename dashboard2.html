@@ -499,9 +499,16 @@ function render() {
 
             }
 
-            if (isPast || !bookingOpen) {
-
-                return `<div class="slot-row" style="opacity:0.6;"><span>${s.s} – ${s.e}</span><div class="closed-badge">${isPast ? 'Closed' : 'Deadline'}</div></div>`;
+           if (isPast || !bookingOpen) {
+  return `<div class="slot-row" style="opacity:0.6;">
+    <span>${s.s} – ${s.e}</span>
+    <div class="closed-badge">
+      ${isPast 
+        ? 'Booking Closed - No Booking Happened' 
+        : 'Booking Closed - Deadline Crossed'}
+    </div>
+  </div>`;
+}
 
             }
 

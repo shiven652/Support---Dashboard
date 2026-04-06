@@ -330,6 +330,15 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
         <option value="">All</option>
       </select>
     </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+  <label style="font-size:12px;font-weight:600;color:var(--navy2);">TAM Account:</label>
+  <select id="filterTAM" onchange="applyFilters()" 
+    style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;">
+    <option value="">All</option>
+    <option value="Yes">Yes</option>
+    <option value="No">No</option>
+  </select>
+</div>
     <!-- ✅ CHANGE 3: New Sub Status filter -->
     <div id="filterSubStatusWrap" style="display:flex;align-items:center;gap:8px;">
       <label style="font-size:12px;font-weight:600;color:var(--navy2);">Sub Status:</label>
@@ -803,8 +812,8 @@ function applyFilters() {
   const customer  = document.getElementById('filterCustomer')?.value || '';
   const queue     = document.getElementById('filterQueue')?.value || '';
   const month     = document.getElementById('filterMonth')?.value || '';
-  // ✅ CHANGE 3: Read Sub Status filter value
   const subStatus = document.getElementById('filterSubStatus')?.value || '';
+  const tam = document.getElementById('filterTAM')?.value || '';
   const dateFrom  = document.getElementById('filterDateFrom')?.value || '';
   const dateTo    = document.getElementById('filterDateTo')?.value || '';
   const C = _colMap;
@@ -815,6 +824,13 @@ function applyFilters() {
   if (queue)     filtered = filtered.filter(r => exclude ? (r[C.queue]||'').trim()    !== queue     : (r[C.queue]||'').trim()    === queue);
   if (month)     filtered = filtered.filter(r => exclude ? (r[C.month]||'').trim()   !== month     : (r[C.month]||'').trim()    === month);
   if (subStatus && C.subStatus) filtered = filtered.filter(r => exclude ? (r[C.subStatus]||'').trim() !== subStatus : (r[C.subStatus]||'').trim() === subStatus);
+  if (tam && C.tam) {
+  filtered = filtered.filter(r =>
+    exclude 
+      ? (r[C.tam] || '').trim() !== tam
+      : (r[C.tam] || '').trim() === tam
+  );
+}
   if (dateFrom || dateTo) {
     const from = dateFrom ? new Date(dateFrom) : null;
     const to   = dateTo   ? new Date(dateTo)   : null;
@@ -832,7 +848,7 @@ function applyFilters() {
   _filteredRows = filtered;
 
   // ✅ CHANGE 3: Include subStatus in isFiltered check
-  const isFiltered = customer || queue || month || subStatus || dateFrom || dateTo;
+  const isFiltered = customer || queue || month || subStatus || tam || dateFrom || dateTo;
   const fc = document.getElementById('filterCount');
   if (fc) {
     fc.style.display = isFiltered ? 'inline' : 'none';
@@ -845,19 +861,24 @@ function applyFilters() {
 
 function resetFilters() {
   setFilterMode('include');
-  // ✅ CHANGE 3: Include filterSubStatus in reset
-  ['filterCustomer','filterQueue','filterMonth','filterSubStatus'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
+
+  // ✅ UPDATED LINE
+  ['filterCustomer','filterQueue','filterMonth','filterSubStatus','filterTAM'].forEach(id => {
+    const el = document.getElementById(id); 
+    if (el) el.value = '';
   });
+
   ['filterDateFrom','filterDateTo'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
+    const el = document.getElementById(id); 
+    if (el) el.value = '';
   });
-document.getElementById('filterMonth').disabled = false;
-document.getElementById('filterDateFrom').disabled = false;
-document.getElementById('filterDateTo').disabled = false;
+
   const fc = document.getElementById('filterCount');
   if (fc) fc.style.display = 'none';
-  Object.values(charts).forEach(c => c.destroy()); charts = {};
+
+  Object.values(charts).forEach(c => c.destroy()); 
+  charts = {};
+
   buildDashboard(_allRows, _sourceName);
 }
 

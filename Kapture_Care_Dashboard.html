@@ -81,7 +81,7 @@ header::after{content:"";position:absolute;inset:0;background:radial-gradient(90
 .seg button.on{background:#fff;color:var(--teal);box-shadow:var(--shadow)}
 .grid2{display:grid;grid-template-columns:1.35fr .9fr;gap:16px}
 @media(max-width:1000px){.grid2{grid-template-columns:1fr}}
-.trgrid{display:grid;grid-template-columns:minmax(0,1fr) 432px;gap:16px;align-items:start}
+.trgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 @media(max-width:900px){.trgrid{grid-template-columns:1fr}}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:18px 20px}
 .panel h3{font-size:14px;font-weight:700;margin-bottom:3px}
@@ -365,6 +365,18 @@ let RAW = /*D*/[["Rishitha S M","Sherman","Airtel Payments Bank","Complete","Res
 let DATA = RAW.slice();
 let PENDING = RAW.filter(r=>r[I.STATUS]!=="Complete");  // pending source (overridden by pending tab when live)
 let PDATA = PENDING.slice();
+let ALL=[], PEND=[];
+/* De-duplicate so each ticket is counted once: resolved tickets come from NT-Dump,
+   pending tickets come from the pending tab. A ticket already resolved in NT-Dump is
+   never re-counted as pending even if it lingers in the pending snapshot. */
+function dedupeByTid(rows){const seen=new Set(),out=[];for(const r of rows){const id=r[I.TID];if(id){if(seen.has(id))continue;seen.add(id);}out.push(r);}return out;}
+function buildUniverse(){
+  const raw=dedupeByTid(RAW);
+  const completeRows=raw.filter(r=>r[I.STATUS]==="Complete");
+  const completeIds=new Set(completeRows.map(r=>r[I.TID]));
+  PEND=dedupeByTid(PENDING).filter(r=>!completeIds.has(r[I.TID]));
+  ALL=completeRows.concat(PEND);
+}
 const state={mode:"include",fPod:"All",fCustomer:"All",fMonth:"All",fSub:"All",from:"",to:"",gran:"monthly"};
 const sortState={key:"tickets",dir:-1};
 const MONTH_ORDER=["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -378,9 +390,9 @@ const slaCol=p=>p>=80?'var(--emerald)':p>=60?'var(--amber)':'var(--red)';
 const colorFor=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return PALETTE[h%PALETTE.length];};
 const initials=s=>s.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();
 
-function uniq(idx){return [...new Set(RAW.map(r=>r[idx]).filter(v=>v!==""&&v!=null))];}
+function uniq(idx){return [...new Set(ALL.map(r=>r[idx]).filter(v=>v!==""&&v!=null))];}
 function customerOptions(){
-  const src = state.fPod==="All" ? RAW : RAW.filter(r=>r[I.POD]===state.fPod);
+  const src = state.fPod==="All" ? ALL : ALL.filter(r=>r[I.POD]===state.fPod);
   return [...new Set(src.map(r=>r[I.CUST]).filter(Boolean))];
 }
 function fillSelect(id,vals,sort){const el=$(id);const o=sort?vals.sort(sort):vals.sort();
@@ -392,7 +404,7 @@ function buildFilters(){
   fillSelect("#fMonth",uniq(I.MONTH),(a,b)=>MONTH_ORDER.indexOf(a)-MONTH_ORDER.indexOf(b));
   fillSelect("#fSub",uniq(I.SUB));
   $("#fPod").value=state.fPod;$("#fCustomer").value=state.fCustomer;$("#fMonth").value=state.fMonth;$("#fSub").value=state.fSub;
-  const ds=RAW.map(r=>r[I.DATE]).filter(Boolean).sort();
+  const ds=ALL.map(r=>r[I.DATE]).filter(Boolean).sort();
   if(ds.length){DMIN=ds[0];DMAX=ds[ds.length-1];
     const ff=$("#fFrom"),ft=$("#fTo");ff.min=ft.min=DMIN;ff.max=ft.max=DMAX;ff.value=DMIN;ft.value=DMAX;
     state.from=DMIN;state.to=DMAX;}
@@ -700,7 +712,7 @@ function renderPending(){
 }
 
 function fmtDateLong(iso){if(!iso)return "—";const p=iso.split("-");return `${+p[2]} ${MON[+p[1]-1]} ${p[0]}`;}
-function updateDataRange(){const ds=RAW.map(r=>r[I.DATE]).filter(Boolean).sort();
+function updateDataRange(){const ds=ALL.map(r=>r[I.DATE]).filter(Boolean).sort();
   $("#dataRange").textContent=ds.length?`${fmtDateLong(ds[0])} → ${fmtDateLong(ds[ds.length-1])}`:"—";}
 
 /* ---- drill-down to raw tickets ---- */
@@ -747,7 +759,7 @@ function handleDrill(el){
   openDrill(rows,title);
 }
 
-function render(){applyFilters();renderKPIs();renderTrend();renderHeatmap();renderAgentTable();renderCategoryBars();renderCategoryTable();renderAccountBars();renderPending();renderSeverity();renderSeverityTable();renderSubtypes();renderQuality();updateDataRange();$("#rowCount").textContent=fmt(RAW.length);}
+function render(){applyFilters();renderKPIs();renderTrend();renderHeatmap();renderAgentTable();renderCategoryBars();renderCategoryTable();renderAccountBars();renderPending();renderSeverity();renderSeverityTable();renderSubtypes();renderQuality();updateDataRange();$("#rowCount").textContent=fmt(ALL.length);}
 
 function bind(){
   $("#fPod").onchange=e=>{state.fPod=e.target.value;state.fCustomer="All";fillSelect("#fCustomer",customerOptions());render();};
@@ -804,6 +816,7 @@ async function loadLive(){
     if(CONFIG.csvUrl){const m=await fetchMapped(CONFIG.csvUrl);if(m.length){RAW=m;mainLive=true;}}
     if(CONFIG.pendingCsvUrl){const p=await fetchMapped(CONFIG.pendingCsvUrl);if(p.length){PENDING=p;pendLive=true;}}
     if(!pendLive) PENDING=RAW.filter(r=>r[I.STATUS]!=="Complete");
+    buildUniverse();
     if(mainLive){$("#liveTag").className="live-tag live";$("#liveTag").textContent="Live";}
     $("#srcDesc").textContent=(mainLive?"Published NT-Dump":"Embedded NT-Dump")+(pendLive?" · live pending tab":"");
     buildFilters();render();flashUpdated();
@@ -816,7 +829,7 @@ function flashUpdated(){const t=new Date().toLocaleTimeString([],{hour:'2-digit'
   cdSeconds=CONFIG.refreshMinutes*60;$("#countdown").textContent=fmtCD(cdSeconds);}
 function tickCountdown(){cdSeconds--;if(cdSeconds<=0){loadLive();return;}$("#countdown").textContent=fmtCD(cdSeconds);}
 
-buildFilters();bind();render();flashUpdated();
+buildUniverse();buildFilters();bind();render();flashUpdated();
 if(CONFIG.csvUrl||CONFIG.pendingCsvUrl) loadLive();
 setInterval(tickCountdown,1000);
 </script>

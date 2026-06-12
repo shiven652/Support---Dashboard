@@ -348,6 +348,13 @@ tbody tr.clickable:hover{background:#eefcf8}
   <div id="tab-open" class="hidden">
     <div class="kpis" id="openKpis"></div>
     <div class="section">
+      <div class="sechead"><span class="bar" style="background:var(--teal);box-shadow:0 0 0 4px rgba(20,184,166,.18)"></span><h2>Pending by category &amp; severity</h2></div>
+      <div class="grid2">
+        <div class="panel"><h3>Pending by category</h3><div class="ph">Open tickets per disposition category · click for raw data</div><div id="penCatBars"></div><div class="tblwrap" style="margin-top:16px"><table id="penCatTable"></table></div></div>
+        <div class="panel"><h3>Pending by severity</h3><div class="ph">Open tickets per severity · click for raw data</div><div id="penSevBars"></div><div class="tblwrap" style="margin-top:16px"><table id="penSevTable"></table></div></div>
+      </div>
+    </div>
+    <div class="section">
       <div class="sechead"><span class="bar" style="background:var(--red);box-shadow:0 0 0 4px rgba(239,68,68,.18)"></span><h2>Open / Pending tickets</h2><span class="hint" id="penHint"></span></div>
       <div class="grid2">
         <div class="panel"><h3>Pending by sub-status</h3><div class="ph">Where open tickets are currently stuck · click for raw data</div><div id="penSubBars"></div><div class="tblwrap" style="margin-top:16px"><table id="penSubTable"></table></div></div>
@@ -516,7 +523,7 @@ function agentAgg(){const map=new Map();
   return [...map.values()].map(o=>({agent:o.agent,pod:Object.entries(o.pods).sort((a,b)=>b[1]-a[1])[0][0]||"—",
     tickets:o.tickets,resolved:o.resolved,pending:o.pending,frtPct:pct(o.fN,o.fD),artPct:pct(o.aN,o.aD),
     csat:o.cC?Math.round(o.cS/o.cC*100)/100:null}));}
-const COLS=[{k:"agent",l:"Agent"},{k:"pod",l:"POD"},{k:"tickets",l:"Tickets",num:1},{k:"resolved",l:"Resolved",num:1},{k:"pending",l:"Pending",num:1},{k:"frtPct",l:"FRT SLA",num:1},{k:"artPct",l:"ART SLA",num:1},{k:"csat",l:"CSAT",num:1}];
+const COLS=[{k:"agent",l:"Agent"},{k:"pod",l:"POD"},{k:"tickets",l:"Tickets",num:1},{k:"resolved",l:"Resolved",num:1},{k:"frtPct",l:"FRT SLA",num:1},{k:"artPct",l:"ART SLA",num:1},{k:"csat",l:"CSAT",num:1}];
 function renderAgentTable(){let rows=agentAgg();const{key,dir}=sortState;
   rows.sort((a,b)=>{const x=a[key],y=b[key];if(x===null)return 1;if(y===null)return -1;return(typeof x==="number"?x-y:String(x).localeCompare(String(y)))*dir;});
   $("#agTable thead").innerHTML="<tr>"+COLS.map(c=>`<th class="${c.num?'num':''} ${c.k===key?'sorted':''}" data-k="${c.k}">${c.l}<span class="ar">${c.k===key?(dir>0?'▲':'▼'):'↕'}</span></th>`).join("")+"</tr>";
@@ -525,7 +532,7 @@ function renderAgentTable(){let rows=agentAgg();const{key,dir}=sortState;
     return `<tr class="clickable" data-drill="field" data-field="AGENT" data-label="Agent" data-value="${r.agent.replace(/"/g,'&quot;')}"><td><div class="agcell"><div class="av" style="background:${colorFor(r.agent)}">${initials(r.agent)}</div>${r.agent}</div></td>
       <td><span class="tag" style="background:${colorFor(r.pod)}22;color:${colorFor(r.pod)}">${r.pod}</span></td>
       <td class="num">${fmt(r.tickets)}</td><td class="num">${fmt(r.resolved)}</td>
-      <td class="num">${r.pending?fmt(r.pending):'<span class="dash">0</span>'}</td>${sc(r.frtPct)}${sc(r.artPct)}
+      ${sc(r.frtPct)}${sc(r.artPct)}
       <td class="num">${r.csat??'<span class="dash">—</span>'}</td></tr>`;}).join("");
   $("#agHint").textContent=`${rows.length} agents · ${fmt(DATA.length)} tickets`;}
 function renderTrendChart(rows){
@@ -553,6 +560,8 @@ function drillAttr(kind,key,i){
   if(kind==="age")return ` data-drill="age" data-b="${i}"`;
   if(kind==="openpod")return ` data-drill="openpod" data-value="${key}"`;
   if(kind==="opencust")return ` data-drill="opencust" data-value="${key}"`;
+  if(kind==="pencat")return ` data-drill="pencat" data-value="${key}"`;
+  if(kind==="pensev")return ` data-drill="pensev" data-value="${key}"`;
   return "";
 }
 function volBars(el,entries,limit,opt){opt=opt||{};
@@ -724,7 +733,7 @@ const AGE_BRACKETS=[["0–1 day",0,1],["2–3 days",2,3],["4–7 days",4,7],["8�
 const AGE_COLORS=["#10b981","#34d399","#f59e0b","#f97316","#ef4444","#b91c1c"];
 function ageBracket(a){for(let i=0;i<AGE_BRACKETS.length;i++){if(a>=AGE_BRACKETS[i][1]&&a<=AGE_BRACKETS[i][2])return i;}return AGE_BRACKETS.length-1;}
 function renderCountTable(el,label,rows,kind){const tot=rows.reduce((a,r)=>a+r.v,0);
-  const at=(r,i)=>kind==="pendsub"?` class="clickable" data-drill="pendsub" data-value="${r.name}"`:kind==="age"?` class="clickable" data-drill="age" data-b="${i}"`:"";
+  const at=(r,i)=>kind==="pendsub"?` class="clickable" data-drill="pendsub" data-value="${r.name}"`:kind==="age"?` class="clickable" data-drill="age" data-b="${i}"`:kind==="pencat"?` class="clickable" data-drill="pencat" data-value="${r.name}"`:kind==="pensev"?` class="clickable" data-drill="pensev" data-value="${r.name}"`:"";
   $(el).innerHTML=`<thead><tr><th class="nocsort">${label}</th><th class="nocsort num">Count</th><th class="nocsort num">Share</th></tr></thead><tbody>`+
     rows.map((r,i)=>`<tr${at(r,i)}><td><span class="tag" style="background:${r.color}22;color:${r.color}">${r.name}</span></td><td class="num">${fmt(r.v)}</td><td class="num">${tot?(r.v/tot*100).toFixed(1):0}%</td></tr>`).join("")+
     `</tbody><tfoot><tr><td>Total</td><td class="num">${fmt(tot)}</td><td class="num">100%</td></tr></tfoot>`;}
@@ -786,6 +795,8 @@ function handleDrill(el){
   else if(t==="age"){const b=AGE_BRACKETS[+el.dataset.b];rows=PDATA.filter(r=>r[I.AGE]!=null&&r[I.AGE]>=b[1]&&r[I.AGE]<=b[2]);title=`Pending · ${b[0]} old`;}
   else if(t==="openpod"){const v=el.dataset.value;rows=PDATA.filter(r=>(r[I.POD]||"—")===v);title=`Open · POD ${v}`;}
   else if(t==="opencust"){const v=el.dataset.value;rows=PDATA.filter(r=>(r[I.CUST]||"Unattributed")===v);title=`Open · ${v}`;}
+  else if(t==="pencat"){const v=el.dataset.value;rows=PDATA.filter(r=>(r[I.CAT]||"Uncategorized")===v);title=`Open · ${v}`;}
+  else if(t==="pensev"){const v=el.dataset.value;rows=PDATA.filter(r=>(SEV_MAP[r[I.SEV]]?SEV_MAP[r[I.SEV]].l:"Unset")===v);title=`Open · Severity ${v}`;}
   else return;
   openDrill(rows,title);
 }
@@ -835,6 +846,17 @@ function renderOpenTab(){
   volBars("#openPodBars",[...pm.entries()],null,{drill:"openpod"});
   const cm=new Map();for(const r of open){const c=r[I.CUST]||"Unattributed";cm.set(c,(cm.get(c)||0)+1);}
   volBars("#openCustBars",[...cm.entries()],12,{drill:"opencust"});
+  // pending by category
+  const catM=new Map();for(const r of open){const c=r[I.CAT]||"Uncategorized";catM.set(c,(catM.get(c)||0)+1);}
+  const catE=[...catM.entries()].sort((a,b)=>b[1]-a[1]);
+  volBars("#penCatBars",catE,null,{drill:"pencat"});
+  renderCountTable("#penCatTable","Category",catE.map(([k,v])=>({name:k,color:colorFor(k),v})),"pencat");
+  // pending by severity
+  const sevC={S1:"#ef4444",S2:"#f59e0b",S3:"#3b82f6",S4:"#10b981",Unset:"#94a3b8"};
+  const sevM=new Map();for(const r of open){const l=SEV_MAP[r[I.SEV]]?SEV_MAP[r[I.SEV]].l:"Unset";sevM.set(l,(sevM.get(l)||0)+1);}
+  const sevE=["S1","S2","S3","S4","Unset"].filter(l=>sevM.has(l)).map(l=>[l,sevM.get(l)]);
+  volBars("#penSevBars",sevE,null,{keepOrder:true,colors:sevE.map(e=>sevC[e[0]]),drill:"pensev"});
+  renderCountTable("#penSevTable","Severity",sevE.map(([k,v])=>({name:k,color:sevC[k],v})),"pensev");
 }
 
 function render(){applyFilters();renderKPIs();renderTrend();renderComparison();renderHeatmap();renderAgentTable();renderCategoryBars();renderCategoryTable();renderAccountBars();renderPending();renderOpenTab();renderSeverity();renderSeverityTable();renderSubtypes();renderQuality();updateDataRange();$("#rowCount").textContent=fmt(ALL.length);}

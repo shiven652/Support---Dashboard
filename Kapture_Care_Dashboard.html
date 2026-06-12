@@ -31,6 +31,11 @@ header::after{content:"";position:absolute;inset:0;background:radial-gradient(90
 .pill{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);padding:8px 14px;border-radius:11px;font-size:12.5px;color:#dbeafe;display:flex;gap:7px;align-items:center}
 .pill b{color:#fff}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 3px rgba(16,185,129,.25);animation:pulse 2s infinite}
+.tabs{max-width:1480px;margin:0 auto;padding:0 22px;display:flex;gap:6px;position:relative;z-index:1}
+.tab{appearance:none;background:transparent;border:0;color:#9fc7d8;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14.5px;padding:12px 20px 14px;cursor:pointer;border-radius:11px 11px 0 0;transition:.18s;display:flex;align-items:center;gap:8px}
+.tab:hover{color:#e2f6f1}
+.tab.active{background:var(--bg);color:var(--navy)}
+.hidden{display:none!important}
 @keyframes pulse{50%{opacity:.45}}
 .strip{background:var(--card);border:1px solid var(--line);border-top:0;border-radius:0 0 16px 16px;box-shadow:var(--shadow);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .strip .src{display:flex;align-items:center;gap:12px}
@@ -193,6 +198,10 @@ tbody tr.clickable:hover{background:#eefcf8}
       <div class="pill">Updated&nbsp;<b id="updTime">—</b></div>
     </div>
   </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="resolved">📁 Resolved Data</button>
+    <button class="tab" data-tab="open">🟠 Open Ticket</button>
+  </div>
 </header>
 
 <div class="wrap">
@@ -229,6 +238,7 @@ tbody tr.clickable:hover{background:#eefcf8}
     </div>
   </div>
 
+  <div id="tab-resolved">
   <div class="kpis" id="kpis"></div>
 
   <div class="section">
@@ -248,9 +258,9 @@ tbody tr.clickable:hover{background:#eefcf8}
         <div id="trChart" class="trchart"></div>
       </div>
       <div class="panel">
-        <h3>New tickets — daily &amp; hourly</h3>
-        <div class="ph">Created tickets by weekday &amp; hour · click a cell for raw data</div>
-        <div id="heatmap" class="heatmap"></div>
+        <h3>This <span id="cmpUnit">month</span> vs last <span id="cmpUnit2">month</span></h3>
+        <div class="ph" id="cmpHead">—</div>
+        <div id="cmpBody"></div>
       </div>
     </div>
     <div class="panel" style="margin-top:16px">
@@ -263,14 +273,6 @@ tbody tr.clickable:hover{background:#eefcf8}
     <div class="grid2">
       <div class="panel"><h3>Tickets by category</h3><div class="ph">Issue · Query · Service Request · Enhancement …</div><div id="catBars"></div><div class="tblwrap" style="margin-top:16px"><table id="catTable"></table></div></div>
       <div class="panel"><h3>Top accounts by volume</h3><div class="ph">Tickets per customer (filtered)</div><div id="acctBars"></div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="sechead"><span class="bar" style="background:var(--red);box-shadow:0 0 0 4px rgba(239,68,68,.18)"></span><h2>Open / Pending tickets</h2><span class="hint" id="penHint"></span></div>
-    <div class="grid2">
-      <div class="panel"><h3>Pending by sub-status</h3><div class="ph">Where open tickets are currently stuck</div><div id="penSubBars"></div><div class="tblwrap" style="margin-top:16px"><table id="penSubTable"></table></div></div>
-      <div class="panel"><h3>Pending by ageing bracket</h3><div class="ph">Days since the ticket was created</div><div id="penAgeBars"></div><div class="tblwrap" style="margin-top:16px"><table id="penAgeTable"></table></div></div>
     </div>
   </div>
 
@@ -325,16 +327,43 @@ tbody tr.clickable:hover{background:#eefcf8}
         <div id="artMonth" class="trchart"></div>
         <div id="artNote"></div>
       </div>
+    </div>
+    <div class="grid2" style="margin-top:16px;align-items:start">
       <div class="panel">
         <h3>Agent interaction count</h3><div class="ph">Agent touches per ticket (col AW)</div>
         <div class="donutwrap"><div id="intDonut"></div><div class="qlegend" id="intLegend"></div></div>
         <div class="qchips" id="intChips"></div>
         <div id="intNote"></div>
       </div>
+      <div class="panel">
+        <h3>New tickets — daily &amp; hourly</h3>
+        <div class="ph">Created tickets by weekday &amp; hour · click a cell for raw data</div>
+        <div id="heatmap" class="heatmap"></div>
+      </div>
     </div>
   </div>
 
-  <div class="foot">Kapture Care Master Health Card · Operations view · built for the CX team</div>
+  </div><!-- /tab-resolved -->
+
+  <div id="tab-open" class="hidden">
+    <div class="kpis" id="openKpis"></div>
+    <div class="section">
+      <div class="sechead"><span class="bar" style="background:var(--red);box-shadow:0 0 0 4px rgba(239,68,68,.18)"></span><h2>Open / Pending tickets</h2><span class="hint" id="penHint"></span></div>
+      <div class="grid2">
+        <div class="panel"><h3>Pending by sub-status</h3><div class="ph">Where open tickets are currently stuck · click for raw data</div><div id="penSubBars"></div><div class="tblwrap" style="margin-top:16px"><table id="penSubTable"></table></div></div>
+        <div class="panel"><h3>Pending by ageing bracket</h3><div class="ph">Days since the ticket was created · click for raw data</div><div id="penAgeBars"></div><div class="tblwrap" style="margin-top:16px"><table id="penAgeTable"></table></div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="sechead"><span class="bar" style="background:var(--blue);box-shadow:0 0 0 4px rgba(59,130,246,.18)"></span><h2>Open tickets by POD &amp; customer</h2></div>
+      <div class="grid2">
+        <div class="panel"><h3>Open tickets by POD</h3><div class="ph">Backlog distribution across PODs</div><div id="openPodBars"></div></div>
+        <div class="panel"><h3>Open tickets by customer</h3><div class="ph">Top accounts with open backlog</div><div id="openCustBars"></div></div>
+      </div>
+    </div>
+  </div><!-- /tab-open -->
+
+  <div class="foot">Kapture Care Master Health Card · Resolved Data + Open Ticket · built for the CX team</div>
 </div>
 
 <div class="modal-bg" id="drillBg">
@@ -433,7 +462,6 @@ function metrics(rows){let total=rows.length,res=0,pen=0,fN=0,fD=0,aN=0,aD=0,cS=
 function renderKPIs(){const m=metrics(DATA);
   const c=[{l:"Total Tickets",v:fmt(m.total),s:"All assigned",c:"var(--navy)",k:"total"},
     {l:"Resolved",v:fmt(m.res),s:`${m.resPct??0}% resolution`,c:"var(--emerald)",k:"res"},
-    {l:"Open / Pending",v:fmt(PDATA.length),s:`${pct(PDATA.length,m.total)??0}% backlog`,c:"var(--red)",k:"pen"},
     {l:"FRT within SLA",v:(m.frtPct??0)+"%",s:`${fmt(m.fN)} / ${fmt(m.fD)}`,c:"var(--teal)",k:"frt"},
     {l:"ART within SLA",v:(m.artPct??0)+"%",s:`${fmt(m.aN)} / ${fmt(m.aD)}`,c:"var(--amber)",k:"art"},
     {l:"Avg CSAT",v:m.csat??"—",s:`${fmt(m.cC)} rated`,c:"var(--violet)",k:"csat"}];
@@ -462,17 +490,16 @@ function renderTrend(){
   const lim=TREND_LIMIT[state.gran];
   if(lim&&rows.length>lim) rows=rows.slice(-lim);
   renderTrendChart(rows);
-  const cols=["Period","Tickets","Resolved","Pending","FRT SLA","ART SLA","CSAT"];
+  const cols=["Period","Created","Resolved","FRT SLA","ART SLA","CSAT"];
   $("#trTable thead").innerHTML="<tr>"+cols.map((c,i)=>`<th class="nocsort ${i?'num':''}">${c}</th>`).join("")+"</tr>";
   const cell=(n,d)=>{const p=pct(n,d);return p===null?'<td class="num"><span class="dash">—</span></td>':`<td class="num"><span class="${slaClass(p)}">${p}%</span></td>`;};
   $("#trTable tbody").innerHTML=rows.map(o=>`<tr>
     <td>${o.label}</td><td class="num">${fmt(o.t)}</td><td class="num">${fmt(o.res)}</td>
-    <td class="num">${o.pen?fmt(o.pen):'<span class="dash">0</span>'}</td>
     ${cell(o.fN,o.fD)}${cell(o.aN,o.aD)}
     <td class="num">${o.cC?Math.round(o.cS/o.cC*100)/100:'<span class="dash">—</span>'}</td></tr>`).join("");
-  const T=rows.reduce((a,o)=>{a.t+=o.t;a.res+=o.res;a.pen+=o.pen;a.fN+=o.fN;a.fD+=o.fD;a.aN+=o.aN;a.aD+=o.aD;a.cS+=o.cS;a.cC+=o.cC;return a;},{t:0,res:0,pen:0,fN:0,fD:0,aN:0,aD:0,cS:0,cC:0});
+  const T=rows.reduce((a,o)=>{a.t+=o.t;a.res+=o.res;a.fN+=o.fN;a.fD+=o.fD;a.aN+=o.aN;a.aD+=o.aD;a.cS+=o.cS;a.cC+=o.cC;return a;},{t:0,res:0,fN:0,fD:0,aN:0,aD:0,cS:0,cC:0});
   $("#trTable tfoot").innerHTML=`<tr><td>Total · ${rows.length} ${TREND_UNIT[state.gran]}${rows.length!==1?'s':''}</td>
-    <td class="num">${fmt(T.t)}</td><td class="num">${fmt(T.res)}</td><td class="num">${fmt(T.pen)}</td>
+    <td class="num">${fmt(T.t)}</td><td class="num">${fmt(T.res)}</td>
     <td class="num">${pct(T.fN,T.fD)??'—'}%</td><td class="num">${pct(T.aN,T.aD)??'—'}%</td>
     <td class="num">${T.cC?Math.round(T.cS/T.cC*100)/100:'—'}</td></tr>`;
   $("#trHint").textContent=`last ${rows.length} ${TREND_UNIT[state.gran]}${rows.length!==1?'s':''}`;
@@ -524,6 +551,8 @@ function drillAttr(kind,key,i){
   if(kind==="cust")return ` data-drill="field" data-field="CUST" data-label="Customer" data-value="${key}"`;
   if(kind==="pendsub")return ` data-drill="pendsub" data-value="${key}"`;
   if(kind==="age")return ` data-drill="age" data-b="${i}"`;
+  if(kind==="openpod")return ` data-drill="openpod" data-value="${key}"`;
+  if(kind==="opencust")return ` data-drill="opencust" data-value="${key}"`;
   return "";
 }
 function volBars(el,entries,limit,opt){opt=opt||{};
@@ -755,11 +784,60 @@ function handleDrill(el){
   else if(t==="sev"){const v=el.dataset.value;rows=DATA.filter(r=>SEV_MAP[r[I.SEV]]&&SEV_MAP[r[I.SEV]].l===v);title=`Severity ${v}`;}
   else if(t==="pendsub"){const v=el.dataset.value;rows=PDATA.filter(r=>(r[I.SUB]||"Unspecified")===v);title=`Pending · ${v}`;}
   else if(t==="age"){const b=AGE_BRACKETS[+el.dataset.b];rows=PDATA.filter(r=>r[I.AGE]!=null&&r[I.AGE]>=b[1]&&r[I.AGE]<=b[2]);title=`Pending · ${b[0]} old`;}
+  else if(t==="openpod"){const v=el.dataset.value;rows=PDATA.filter(r=>(r[I.POD]||"—")===v);title=`Open · POD ${v}`;}
+  else if(t==="opencust"){const v=el.dataset.value;rows=PDATA.filter(r=>(r[I.CUST]||"Unattributed")===v);title=`Open · ${v}`;}
   else return;
   openDrill(rows,title);
 }
 
-function render(){applyFilters();renderKPIs();renderTrend();renderHeatmap();renderAgentTable();renderCategoryBars();renderCategoryTable();renderAccountBars();renderPending();renderSeverity();renderSeverityTable();renderSubtypes();renderQuality();updateDataRange();$("#rowCount").textContent=fmt(ALL.length);}
+/* ---- period comparison (this vs last) ---- */
+function renderComparison(){
+  const rows=trend(state.gran);
+  const cur=rows[rows.length-1], prev=rows[rows.length-2];
+  const unit=TREND_UNIT[state.gran];
+  $("#cmpUnit").textContent=unit;$("#cmpUnit2").textContent=unit;
+  if(!cur){$("#cmpHead").textContent="No data in range";$("#cmpBody").innerHTML='<div class="empty">—</div>';return;}
+  $("#cmpHead").innerHTML=prev?`<b>${prev.label}</b> &nbsp;→&nbsp; <b>${cur.label}</b>`:`Current: <b>${cur.label}</b> · no prior ${unit} to compare`;
+  const cs=o=>o.cC?Math.round(o.cS/o.cC*100)/100:null;
+  const M=[
+    {l:"Created",c:cur.t,p:prev?prev.t:null,good:"down"},
+    {l:"Resolved",c:cur.res,p:prev?prev.res:null,good:"up"},
+    {l:"FRT SLA",c:pct(cur.fN,cur.fD),p:prev?pct(prev.fN,prev.fD):null,good:"up",suf:"%"},
+    {l:"ART SLA",c:pct(cur.aN,cur.aD),p:prev?pct(prev.aN,prev.aD):null,good:"up",suf:"%"},
+    {l:"CSAT",c:cs(cur),p:prev?cs(prev):null,good:"up"}
+  ];
+  const fmtv=(v,s)=>v==null?'<span class="dash">—</span>':fmt(v)+(s||'');
+  const delta=(c,p,good)=>{if(p==null||c==null||p===0)return '<span class="dash">—</span>';
+    const d=c-p,pv=Math.round(d/p*1000)/10,better=good==="up"?d>=0:d<=0,cls=d===0?'dash':(better?'good':'bad'),arr=d>0?'▲':d<0?'▼':'•';
+    return `<span class="${cls}">${arr} ${Math.abs(pv)}%</span>`;};
+  $("#cmpBody").innerHTML=`<div class="tblwrap" style="max-height:none"><table>
+    <thead><tr><th class="nocsort">Metric</th><th class="nocsort num">Last ${unit}</th><th class="nocsort num">This ${unit}</th><th class="nocsort num">Change</th></tr></thead>
+    <tbody>${M.map(m=>`<tr><td>${m.l}</td><td class="num">${fmtv(m.p,m.suf)}</td><td class="num">${fmtv(m.c,m.suf)}</td><td class="num">${delta(m.c,m.p,m.good)}</td></tr>`).join("")}</tbody></table></div>`;
+}
+
+/* ---- Open Ticket tab ---- */
+function renderOpenTab(){
+  const open=PDATA;
+  const ages=open.map(r=>r[I.AGE]).filter(v=>v!=null);
+  const avg=ages.length?Math.round(ages.reduce((a,b)=>a+b,0)/ages.length*10)/10:0;
+  const oldest=ages.length?Math.max(...ages):0;
+  const over7=open.filter(r=>r[I.AGE]!=null&&r[I.AGE]>7).length;
+  const unatt=open.filter(r=>(r[I.SUB]||"")==="Unattended").length;
+  const cards=[
+    {l:"Open Tickets",v:fmt(open.length),s:"current backlog",c:"var(--red)"},
+    {l:"Avg Age",v:avg+" d",s:"days open",c:"var(--amber)"},
+    {l:"Oldest",v:oldest+" d",s:"days open",c:"var(--violet)"},
+    {l:">7 days old",v:fmt(over7),s:`${pct(over7,open.length)??0}% of open`,c:"var(--red)"},
+    {l:"Unattended",v:fmt(unatt),s:"never actioned",c:"var(--navy)"}
+  ];
+  $("#openKpis").innerHTML=cards.map((x,i)=>`<div class="kpi" style="--c:${x.c};animation-delay:${i*55}ms"><div class="lab">${x.l}</div><div class="val">${x.v}</div><div class="sub">${x.s}</div></div>`).join("");
+  const pm=new Map();for(const r of open){const p=r[I.POD]||"—";pm.set(p,(pm.get(p)||0)+1);}
+  volBars("#openPodBars",[...pm.entries()],null,{drill:"openpod"});
+  const cm=new Map();for(const r of open){const c=r[I.CUST]||"Unattributed";cm.set(c,(cm.get(c)||0)+1);}
+  volBars("#openCustBars",[...cm.entries()],12,{drill:"opencust"});
+}
+
+function render(){applyFilters();renderKPIs();renderTrend();renderComparison();renderHeatmap();renderAgentTable();renderCategoryBars();renderCategoryTable();renderAccountBars();renderPending();renderOpenTab();renderSeverity();renderSeverityTable();renderSubtypes();renderQuality();updateDataRange();$("#rowCount").textContent=fmt(ALL.length);}
 
 function bind(){
   $("#fPod").onchange=e=>{state.fPod=e.target.value;state.fCustomer="All";fillSelect("#fCustomer",customerOptions());render();};
@@ -775,7 +853,11 @@ function bind(){
   $("#resetBtn").onclick=resetAll;$("#resetBtn2").onclick=resetAll;
   $("#refreshBtn").onclick=loadLive;
   $("#granSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
-    state.gran=b.dataset.g;[...$("#granSeg").children].forEach(x=>x.classList.toggle("on",x===b));renderTrend();});
+    state.gran=b.dataset.g;[...$("#granSeg").children].forEach(x=>x.classList.toggle("on",x===b));renderTrend();renderComparison();});
+  document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");
+    const isOpen=t.dataset.tab==="open";
+    $("#tab-open").classList.toggle("hidden",!isOpen);$("#tab-resolved").classList.toggle("hidden",isOpen);});
   $("#agTable thead").addEventListener("click",e=>{const th=e.target.closest("th");if(!th||!th.dataset.k)return;
     const k=th.dataset.k;if(sortState.key===k)sortState.dir*=-1;else{sortState.key=k;sortState.dir=(k==="agent"||k==="pod")?1:-1;}renderAgentTable();});
   document.addEventListener("click",e=>{const el=e.target.closest("[data-drill]");if(el){handleDrill(el);}});

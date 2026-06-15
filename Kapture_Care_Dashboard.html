@@ -221,7 +221,7 @@ tbody tr.clickable:hover{background:#eefcf8}
       <div class="srcicon">📄</div>
       <div><b>Data source</b> <span id="srcDesc">Embedded snapshot</span> <span class="live-tag sample" id="liveTag">Sample</span></div>
     </div>
-    <div class="rngbox"><div class="bl">📅 Data range</div><div class="bv" id="dataRange">—</div></div>
+    <div class="rngbox" data-only="resolved"><div class="bl">📅 Data range</div><div class="bv" id="dataRange">—</div></div>
     <div class="refbox"><div class="bl">⏱ Next auto-refresh</div><div class="bv" id="countdown">—</div></div>
     <div class="stripright">
       <span class="updated">Last updated: <b id="updTime2">—</b></span>
@@ -440,7 +440,9 @@ const initials=s=>s.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join(""
 
 function uniq(idx){return [...new Set(ALL.map(r=>r[idx]).filter(v=>v!==""&&v!=null))];}
 function customerOptions(){
-  const src = state.fPod==="All" ? ALL : ALL.filter(r=>r[I.POD]===state.fPod);
+  let src = ALL;
+  if(state.fPod!=="All") src=src.filter(r=>r[I.POD]===state.fPod);
+  if(state.fPodName!=="All") src=src.filter(r=>r[I.PODNAME]===state.fPodName);
   return [...new Set(src.map(r=>r[I.CUST]).filter(Boolean))];
 }
 function podNameOptions(){
@@ -888,7 +890,7 @@ function render(){applyFilters();renderKPIs();renderTrend();renderComparison();r
 
 function bind(){
   $("#fPod").onchange=e=>{state.fPod=e.target.value;state.fPodName="All";state.fCustomer="All";fillSelect("#fPodName",podNameOptions());fillSelect("#fCustomer",customerOptions());render();};
-  $("#fPodName").onchange=e=>{state.fPodName=e.target.value;render();};
+  $("#fPodName").onchange=e=>{state.fPodName=e.target.value;state.fCustomer="All";fillSelect("#fCustomer",customerOptions());render();};
   $("#fCustomer").onchange=e=>{state.fCustomer=e.target.value;render();};
   $("#fMonth").onchange=e=>{state.fMonth=e.target.value;render();};
   $("#fSub").onchange=e=>{state.fSub=e.target.value;render();};
@@ -902,7 +904,7 @@ function bind(){
   $("#refreshBtn").onclick=loadLive;
   $("#granSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
     state.gran=b.dataset.g;[...$("#granSeg").children].forEach(x=>x.classList.toggle("on",x===b));renderTrend();renderComparison();});
-  function applyTabFilters(tab){document.querySelectorAll(".fld[data-only]").forEach(f=>f.classList.toggle("hidden",f.dataset.only!==tab));}
+  function applyTabFilters(tab){document.querySelectorAll("[data-only]").forEach(f=>f.classList.toggle("hidden",f.dataset.only!==tab));}
   applyTabFilters("resolved");
   document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
     document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");
